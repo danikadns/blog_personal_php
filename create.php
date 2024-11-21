@@ -1,5 +1,8 @@
 <?php
 include 'db.php';
+require 'vendor/autoload.php'; // Asegúrate de tener la SDK de AWS instalada
+
+use Aws\S3\S3Client;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
@@ -15,8 +18,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $sql = "INSERT INTO users (name, username, password, email, phone_number, role_id, description) 
             VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
+
     if ($conn->query($sql) === TRUE) {
-        header('Location: users.php'); // Redirigir a la lista de usuarios
+        // Obtén el ID del usuario recién creado
+        $user_id = $conn->insert_id;
+
+        // Configura el cliente de S3
+        $s3 = new S3Client([
+            'version' => 'latest',
+            'region'  => 'us-east-1', // Ajusta según tu región
+        ]);
+
+        $bucketName = 'almacenamiento-blog-personal'; 
+        $userFolder = "user-{$user_id}/";
+
+        try {
+            // Crear carpetas en S3
+            $folders = [
+                $userFolder . "original/",
+                $userFolder . "thumbnails/",
+            ];
+
+            foreach ($folders as $folder) {
+                $s3->putObject([
+                    'Bucket' => $bucketName,
+                    'Key'    => $folder,
+                    'Body'   => '', // Crea un objeto vacío para simular una carpeta
+                    'ACL'    => 'private', // Ajusta según sea necesario
+                ]);
+            }
+
+            header('Location: users.php'); // Redirigir a la lista de usuarios
+        } catch (Aws\Exception\S3Exception $e) {
+            echo "Error creando carpetas en S3: " . $e->getMessage();
+        }
     } else {
         echo "Error: " . $conn->error;
     }
