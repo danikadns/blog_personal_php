@@ -1,4 +1,14 @@
 <?php
+require 'session_handler.php';
+
+$handler = new MySQLSessionHandler();
+session_set_save_handler($handler, true);
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 include 'db.php';
 
 // Consultar usuarios y sus roles
@@ -21,6 +31,8 @@ $result = $conn->query($sql);
         <h1 class="text-3xl font-bold mb-6">Lista de Usuarios</h1>
 
         <a href="create.php" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Crear Usuario</a>
+
+        <a href="logout.php" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar Sesión </a>
 
         <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden mt-6">
             <thead class="bg-gray-800 text-white">
