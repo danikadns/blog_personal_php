@@ -3,6 +3,7 @@ include 'db.php';
 require 'vendor/autoload.php'; // Asegúrate de tener la SDK de AWS instalada
 
 use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
@@ -40,19 +41,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ];
 
             foreach ($folders as $folder) {
-                $s3->putObject([
+                $result = $s3->putObject([
                     'Bucket' => $bucketName,
                     'Key'    => $folder,
                     'Body'   => '', // Crea un objeto vacío para simular una carpeta
                     'ACL'    => 'private', // Ajusta según sea necesario
                 ]);
+                // Registro para verificar resultados
+                error_log("Carpeta creada: " . $result['ObjectURL']);
             }
 
             header('Location: users.php'); // Redirigir a la lista de usuarios
-        } catch (Aws\Exception\S3Exception $e) {
-            echo "Error creando carpetas en S3: " . $e->getMessage();
+        } catch (AwsException $e) {
+            // Manejo de excepciones y registro del error
+            error_log("Error creando carpetas en S3: " . $e->getMessage());
+            echo "Ocurrió un error al crear las carpetas en S3. Por favor, revisa los logs.";
         }
     } else {
+        error_log("Error creando usuario en la base de datos: " . $conn->error);
         echo "Error: " . $conn->error;
     }
 }
