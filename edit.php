@@ -5,34 +5,33 @@ $id = $_GET['id'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
+    $username = $_POST['username']; // Capturar el nuevo campo
     $password = $_POST['password'];
     $email = $_POST['email'];
     $phone_number = $_POST['phone_number'];
     $role_id = $_POST['role_id'];
     $description = $_POST['description'];
 
-    // Obtener la contraseña actual para verificar si cambió
-    $user_result = $conn->query("SELECT password FROM users WHERE id=$id");
-    $user = $user_result->fetch_assoc();
-    $current_password = $user['password'];
-
-    // Si la nueva contraseña es diferente a la actual, la encriptamos
-    if ($password !== $current_password) {
+    // Si el campo de contraseña está vacío, no actualizamos la contraseña
+    if (!empty($password)) {
+        // Encriptar la nueva contraseña
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $password_sql = ", password='$hashed_password'";
     } else {
-        $hashed_password = $current_password; // Mantener la contraseña actual
+        $password_sql = ""; // No modificar la contraseña
     }
 
     $sql = "UPDATE users SET 
                 name='$name', 
-                password='$hashed_password', 
+                username='$username',
                 email='$email', 
                 phone_number='$phone_number', 
                 role_id='$role_id', 
                 description='$description' 
+                $password_sql
             WHERE id=$id";
     if ($conn->query($sql) === TRUE) {
-        header('Location: index.php');
+        header('Location: users.php'); // Redirigir a la lista de usuarios
     } else {
         echo "Error: " . $conn->error;
     }
@@ -62,7 +61,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div class="mb-4">
-                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Usuario:</label>
+                <input type="text" name="username" id="username" value="<?= $user['username'] ?>" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
                 <input type="password" name="password" id="password" value="" placeholder="Dejar en blanco para mantener la actual" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
             </div>
 

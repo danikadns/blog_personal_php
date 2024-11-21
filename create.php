@@ -3,6 +3,7 @@ include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
+    $username = $_POST['username'];
     $password = $_POST['password'];
     $email = $_POST['email'];
     $phone_number = $_POST['phone_number'];
@@ -12,10 +13,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Encripta la contraseña
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    $sql = "INSERT INTO users (name, password, email, phone_number, role_id, description) 
-            VALUES ('$name', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
+    $sql = "INSERT INTO users (name, username, password, email, phone_number, role_id, description) 
+            VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
     if ($conn->query($sql) === TRUE) {
-        header('Location: index.php');
+        header('Location: users.php'); // Redirigir a la lista de usuarios
     } else {
         echo "Error: " . $conn->error;
     }
@@ -43,7 +44,12 @@ $roles_result = $conn->query("SELECT id, role FROM roles");
             </div>
 
             <div class="mb-4">
-                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Usuario:</label>
+                <input type="text" name="username" id="username" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
                 <input type="password" name="password" id="password" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
             </div>
 

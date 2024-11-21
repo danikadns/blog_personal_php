@@ -28,6 +28,7 @@ include 'db.php';
         <nav class="mb-6">
             <ul class="flex space-x-4">
                 <li><a href="blogs.php" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ver Blogs</a></li>
+                <li><a href="create_blog.php" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Crear una entrada</a></li>
                 <li><a href="users.php" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Gestión de Usuarios</a></li>
                 <li><a href="account.php" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">Mi Cuenta</a></li>
                 <li><a href="logout.php" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar Sesión</a></li>
