@@ -11,8 +11,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $role_id = $_POST['role_id'];
     $description = $_POST['description'];
 
-    $sql = "UPDATE users SET name='$name', password='$password', email='$email', phone_number='$phone_number', 
-            role_id='$role_id', description='$description' WHERE id=$id";
+    // Obtener la contraseña actual para verificar si cambió
+    $user_result = $conn->query("SELECT password FROM users WHERE id=$id");
+    $user = $user_result->fetch_assoc();
+    $current_password = $user['password'];
+
+    // Si la nueva contraseña es diferente a la actual, la encriptamos
+    if ($password !== $current_password) {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    } else {
+        $hashed_password = $current_password; // Mantener la contraseña actual
+    }
+
+    $sql = "UPDATE users SET 
+                name='$name', 
+                password='$hashed_password', 
+                email='$email', 
+                phone_number='$phone_number', 
+                role_id='$role_id', 
+                description='$description' 
+            WHERE id=$id";
     if ($conn->query($sql) === TRUE) {
         header('Location: index.php');
     } else {
@@ -45,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <div class="mb-4">
                 <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
-                <input type="password" name="password" id="password" value="<?= $user['password'] ?>" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                <input type="password" name="password" id="password" value="" placeholder="Dejar en blanco para mantener la actual" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
             </div>
 
             <div class="mb-4">
