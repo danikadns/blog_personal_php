@@ -9,13 +9,8 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
-include 'db.php';
 
-// Consultar usuarios y sus roles
-$sql = "SELECT users.id, users.name, users.email, users.phone_number, users.description, roles.role 
-        FROM users 
-        LEFT JOIN roles ON users.role_id = roles.id";
-$result = $conn->query($sql);
+include 'db.php';
 ?>
 
 <!DOCTYPE html>
@@ -23,52 +18,36 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRUD de Usuarios</title>
+    <title>Home - Blog Personal</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
     <div class="container mx-auto">
-        <h1 class="text-3xl font-bold mb-6">Lista de Usuarios</h1>
+        <h1 class="text-4xl font-bold mb-6">Bienvenido a tu Blog Personal</h1>
+        
+        <nav class="mb-6">
+            <ul class="flex space-x-4">
+                <li><a href="blogs.php" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ver Blogs</a></li>
+                <li><a href="users.php" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Gestión de Usuarios</a></li>
+                <li><a href="account.php" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">Mi Cuenta</a></li>
+                <li><a href="logout.php" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar Sesión</a></li>
+            </ul>
+        </nav>
 
-        <a href="create.php" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Crear Usuario</a>
-
-        <a href="logout.php" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar Sesión </a>
-
-        <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden mt-6">
-            <thead class="bg-gray-800 text-white">
-                <tr>
-                    <th class="py-2">ID</th>
-                    <th class="py-2 text-left">Nombre</th>
-                    <th class="py-2 text-left">Email</th>
-                    <th class="py-2 text-left">Teléfono</th>
-                    <th class="py-2 text-left">Rol</th>
-                    <th class="py-2 text-left">Descripción</th>
-                    <th class="py-2">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="text-center">
-                <?php if ($result->num_rows > 0): ?>
-                    <?php while($row = $result->fetch_assoc()): ?>
-                        <tr>
-                            <td class="py-2"><?= $row['id'] ?></td>
-                            <td class="py-2 text-left"><?= $row['name'] ?></td>
-                            <td class="py-2 text-left"><?= $row['email'] ?></td>
-                            <td class="py-2 text-left"><?= $row['phone_number'] ?></td>
-                            <td class="py-2 text-left"><?= $row['role'] ?: 'Sin rol' ?></td>
-                            <td class="py-2 text-left"><?= $row['description'] ?></td>
-                            <td class="py-2">
-                                <a href="edit.php?id=<?= $row['id'] ?>" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">Editar</a>
-                                <a href="delete.php?id=<?= $row['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded">Eliminar</a>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="7" class="py-4">No hay usuarios</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+        <section>
+            <h2 class="text-2xl font-bold mb-4">Últimos Blogs</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php
+                $blogs = $conn->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 6");
+                while ($blog = $blogs->fetch_assoc()): ?>
+                    <div class="bg-white shadow-md rounded-lg p-4">
+                        <h3 class="text-xl font-bold"><?= htmlspecialchars($blog['title']) ?></h3>
+                        <p class="text-gray-700"><?= substr(htmlspecialchars($blog['content']), 0, 100) ?>...</p>
+                        <a href="blog_details.php?id=<?= $blog['id'] ?>" class="text-blue-500 hover:text-blue-700">Leer más</a>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        </section>
     </div>
 </body>
 </html>
