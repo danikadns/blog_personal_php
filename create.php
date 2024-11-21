@@ -9,8 +9,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $role_id = $_POST['role_id'];
     $description = $_POST['description'];
 
+    // Encripta la contraseña
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
     $sql = "INSERT INTO users (name, password, email, phone_number, role_id, description) 
-            VALUES ('$name', '$password', '$email', '$phone_number', '$role_id', '$description')";
+            VALUES ('$name', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
     if ($conn->query($sql) === TRUE) {
         header('Location: index.php');
     } else {
