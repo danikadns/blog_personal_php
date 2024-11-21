@@ -1,6 +1,9 @@
 <?php
+require 'session_handler.php';
+
+$handler = new MySQLSessionHandler();
+session_set_save_handler($handler, true);
 session_start();
-require 'db.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
