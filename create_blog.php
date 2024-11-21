@@ -1,6 +1,6 @@
 <?php
 require 'session_handler.php';
-require 'vendor/autoload.php'; // Asegúrate de tener la SDK de AWS instalada
+require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
@@ -45,12 +45,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ]);
 
             // Guarda la entrada del blog en la base de datos
-            $sql = "INSERT INTO blogs (user_id, title, content, image_path) VALUES ('$user_id', '$title', '$content', '$s3Key')";
+            $sql = "INSERT INTO blogs (user_id, title, content, image_url) VALUES ('$user_id', '$title', '$content', '$s3Key')";
             if ($conn->query($sql) === TRUE) {
                 header('Location: blogs.php');
                 exit();
             } else {
-                echo "Error: " . $conn->error;
+                echo "Error al guardar en la base de datos: " . $conn->error;
             }
         } catch (AwsException $e) {
             echo "Error subiendo la imagen: " . $e->getMessage();
@@ -60,6 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
