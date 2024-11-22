@@ -1,6 +1,7 @@
 <?php
 require 'session_handler.php';
 require 'dynamo_activity.php';
+require 'generateAwsCredentials.php';
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -11,39 +12,32 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Depuración: Mostrar credenciales AWS almacenadas en la sesión
-echo "<h3>Credenciales de AWS (Depuración - Eliminar luego):</h3>";
-echo "<pre>";
-print_r([
-    'aws_access_key' => $_SESSION['aws_access_key'] ?? 'No disponible',
-    'aws_secret_key' => $_SESSION['aws_secret_key'] ?? 'No disponible',
-    'aws_session_token' => $_SESSION['aws_session_token'] ?? 'No disponible',
-    'aws_expiration' => isset($_SESSION['aws_expiration']) ? date('Y-m-d H:i:s', $_SESSION['aws_expiration']) : 'No disponible',
-    'role_arn' => $_SESSION['role_arn'] ?? 'No disponible',
-]);
-echo "</pre>";
-
-if (!isset($_SESSION['aws_access_key'], $_SESSION['aws_secret_key'], $_SESSION['aws_session_token'])) {
-    die("Credenciales de AWS no disponibles. Por favor, inicia sesión nuevamente.");
-}
-
 include 'db.php';
 require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
 
+// Generar credenciales dinámicamente
+try {
+    $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
+} catch (Exception $e) {
+    die("Error al generar credenciales de AWS: " . $e->getMessage());
+}
+
+// Configurar el cliente S3 con las credenciales generadas
 $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',
     'credentials' => [
-        'key'    => $_SESSION['aws_access_key'],
-        'secret' => $_SESSION['aws_secret_key'],
-        'token'  => $_SESSION['aws_session_token'],
+        'key'    => $awsCredentials['AccessKeyId'],
+        'secret' => $awsCredentials['SecretAccessKey'],
+        'token'  => $awsCredentials['SessionToken'],
     ],
 ]);
 
 $bucketName = 'almacenamiento-blog-personal';
 
+// Consultar los blogs más recientes
 $blogs = $conn->query("SELECT blogs.*, users.name AS author_name FROM blogs JOIN users ON blogs.user_id = users.id ORDER BY created_at DESC LIMIT 6");
 ?>
 
