@@ -33,7 +33,7 @@ $blogs = $conn->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 6");
 </head>
 <body class="bg-gray-100">
     <!-- Contenedor principal -->
-    <div class="container mx-auto px-4 md:px-8 lg:px-16 py-8">
+    <div class="container mx-auto py-8">
         <!-- Barra de navegación -->
         <nav class="bg-white shadow-md p-4 rounded mb-8">
             <div class="flex justify-between items-center">
