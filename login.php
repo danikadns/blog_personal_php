@@ -23,10 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['name'];
         $_SESSION['role_id'] = $user['role_id'];
-        logUserActivity(12, 'login');
+       
+        logUserActivity(
+            $user['id'], 
+            'login', 
+            ['username' => $user['username'], 'status' => 'success']
+        );
+
         header('Location: index.php');
         exit;
     } else {
+
+        logUserActivity(
+            0,
+            'login_attempt', 
+            ['username' => $username, 'status' => 'failed']
+        );
         $error = 'Correo o contraseña incorrectos.';
     }
 }
