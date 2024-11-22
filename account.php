@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_blog_id'])) {
             // Eliminar publicación de la base de datos
             $conn->query("DELETE FROM blogs WHERE id = $blog_id AND user_id = $user_id");
 
-            header('Location: profile.php?success=1');
+            header('Location: account.php?success=1');
             exit();
         } catch (AwsException $e) {
             $error = "Error al eliminar la publicación o las imágenes: " . $e->getMessage();
