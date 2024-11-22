@@ -21,22 +21,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $content = $_POST['content'];
     $user_id = $_SESSION['user_id'];
 
-    // Configura S3
+    // Configura el cliente de S3
     $s3 = new S3Client([
         'version' => 'latest',
         'region'  => 'us-east-1',
     ]);
 
     $bucketName = 'almacenamiento-blog-personal';
-    $userFolder = "user-{$user_id}/original/";
+    $originalFolder = "original/";
 
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['image']['tmp_name'];
-        $fileName = $_FILES['image']['name'];
-        $s3Key = $userFolder . $fileName;
+        $fileExtension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+
+        // Generar un nombre único para la imagen
+        $uniqueFileName = uniqid('', true) . '.' . $fileExtension;
+        $s3Key = $originalFolder . $uniqueFileName;
 
         try {
-            // Subir la imagen al bucket
+            // Subir la imagen al bucket en la carpeta "original/"
             $result = $s3->putObject([
                 'Bucket' => $bucketName,
                 'Key'    => $s3Key,
@@ -45,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ]);
 
             // Guarda la entrada del blog en la base de datos
-            $sql = "INSERT INTO blogs (user_id, title, content, image_url) VALUES ('$user_id', '$title', '$content', '$s3Key')";
+            $sql = "INSERT INTO blogs (user_id, title, content, image_url) VALUES ('$user_id', '$title', '$content', '$uniqueFileName')";
             if ($conn->query($sql) === TRUE) {
                 header('Location: blogs.php');
                 exit();
@@ -53,14 +56,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 echo "Error al guardar en la base de datos: " . $conn->error;
             }
         } catch (AwsException $e) {
-            echo "Error subiendo la imagen: " . $e->getMessage();
+            echo "Error subiendo la imagen a S3: " . $e->getMessage();
         }
     } else {
         echo "Error al cargar la imagen.";
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
@@ -69,6 +71,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Blog</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        function previewImage() {
+            const input = document.getElementById('image');
+            const preview = document.getElementById('imagePreview');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
 </head>
 <body class="bg-gray-100 p-8">
     <div class="container mx-auto">
@@ -89,7 +106,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <!-- Campo para la imagen -->
             <div class="mb-4">
                 <label for="image" class="block text-gray-700 text-sm font-bold mb-2">Imagen:</label>
-                <input type="file" name="image" id="image" accept="image/*" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                <input type="file" name="image" id="image" accept="image/*" required onchange="previewImage()" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                <!-- Vista previa de la imagen -->
+                <img id="imagePreview" style="display:none; margin-top: 20px; max-width: 100%; height: auto;" alt="Vista previa de la imagen seleccionada">
             </div>
             
             <!-- Botón para publicar -->
