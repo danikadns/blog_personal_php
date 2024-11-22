@@ -27,7 +27,6 @@ try {
     die("Error al generar credenciales de AWS: " . htmlspecialchars($e->getMessage()));
 }
 
-// Configura los clientes S3 y Lambda con credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',

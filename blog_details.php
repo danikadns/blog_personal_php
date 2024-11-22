@@ -19,8 +19,9 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {
-    die("Error al generar credenciales de AWS: " . $e->getMessage());
+    die("Error al generar credenciales de AWS: " . htmlspecialchars($e->getMessage()));
 }
+
 // Configurar el cliente de S3 con credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',
@@ -35,22 +36,22 @@ $s3 = new S3Client([
 $bucketName = 'almacenamiento-blog-personal';
 
 // Obtener el ID del blog desde la URL
-$blog_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$blog_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
 
 // Consultar los detalles del blog
-$blog_query = $conn->query("SELECT blogs.*, users.name AS author_name, users.description AS author_description, users.id AS author_id 
-                            FROM blogs 
-                            JOIN users ON blogs.user_id = users.id 
-                            WHERE blogs.id = $blog_id");
-$blog = $blog_query->fetch_assoc();
+$stmt = $conn->prepare("SELECT blogs.*, users.name AS author_name, users.description AS author_description, users.id AS author_id 
+                        FROM blogs 
+                        JOIN users ON blogs.user_id = users.id 
+                        WHERE blogs.id = ?");
+$stmt->bind_param('i', $blog_id);
+$stmt->execute();
+$blog = $stmt->get_result()->fetch_assoc();
 
 // Si no se encuentra el blog
 if (!$blog) {
     $error_message = "El blog solicitado no se encuentra disponible.";
-}
-
-// Registro de actividad solo si el blog existe
-if ($blog) {
+} else {
+    // Registro de actividad solo si el blog existe
     logUserActivity($_SESSION['user_id'], 'view_blog', [
         'blog_id' => $blog_id,
         'blog_title' => $blog['title']
@@ -65,7 +66,7 @@ if ($blog) {
         $request = $s3->createPresignedRequest($cmd, '+1 hour');
         $image_url = (string)$request->getUri();
     } catch (Exception $e) {
-        $image_url = 'default-thumbnail.jpg'; // Imagen predeterminada
+        $image_url = 'path/to/default-thumbnail.jpg'; // Imagen predeterminada
     }
 }
 
