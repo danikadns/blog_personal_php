@@ -10,7 +10,7 @@ function logUserActivity($user_id, $action, $details = []) {
         'version' => 'latest'
     ]);
 
-    $tableName = 'user_data';
+    $tableName = 'data_activity';
     $timestamp = gmdate("Y-m-d\TH:i:s\Z"); // Fecha/hora en UTC
     $uuid = uniqid('', true); // Genera un ID único
 
