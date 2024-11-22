@@ -1,4 +1,5 @@
 <?php
+require 'vendor/autoload.php';
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
