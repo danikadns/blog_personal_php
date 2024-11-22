@@ -28,6 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($conn->affected_rows > 0) {
         echo "Suscripción exitosa.";
+        logUserActivity($user_id, 'subscribe', [
+            'author_id' => $author_id
+        ]);
         header('Location: author_blogs.php?author_id=' . $author_id);
         exit;
     } else {

@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['name'];
         $_SESSION['role_id'] = $user['role_id'];
+        logUserActivity($user['id'], 'login');
         header('Location: index.php');
         exit;
     } else {

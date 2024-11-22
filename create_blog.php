@@ -56,10 +56,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Guarda la entrada del blog en la base de datos
             $sql = "INSERT INTO blogs (user_id, title, content, image_url) VALUES ('$user_id', '$title', '$content', '$uniqueFileName')";
             if ($conn->query($sql) === TRUE) {
+
+                logUserActivity($user_id, 'create_blog', [
+                    'blog_id' => $conn->insert_id,
+                    'blog_title' => $title
+                ]);
                 $blog_id = $conn->insert_id;
 
                 // URL del blog recién creado
-                $blog_url = "https://miweb.com/blog/$blog_id";
+                $blog_url = "http://3.81.169.233/blog_details.php?id=$blog_id";
 
                 // Invoca la función Lambda para notificar a los suscriptores
                 try {
