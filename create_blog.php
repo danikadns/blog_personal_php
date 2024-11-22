@@ -66,7 +66,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $result = $lambda->invoke([
                         'FunctionName' => 'arn:aws:lambda:us-east-1:010526258440:function:pruebaSES', // ARN de tu función Lambda
                         'InvocationType' => 'Event', // Ejecución asíncrona
-                        'Payload' => json_encode([]),
+                        'Payload' => json_encode([
+                            'author_id' => $user_id,
+                            'blog_title' => $title,
+                            'blog_url' => $blog_url,
+                        ]),
                     ]);
                     error_log("Llamada a Lambda exitosa: " . json_encode($result));
                 } catch (AwsException $e) {
