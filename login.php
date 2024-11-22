@@ -7,39 +7,61 @@ $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
 session_start();
 
+// Habilitar la visualización de errores (solo en desarrollo)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-
-    $stmt = $conn->prepare('SELECT * FROM users WHERE email = ?');
-    $stmt->bind_param('s', $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['name'];
-        $_SESSION['role_id'] = $user['role_id'];
-       
-        logUserActivity(
-            $user['id'], 
-            'login', 
-            ['username' => $user['username'], 'status' => 'success']
-        );
-
-        header('Location: index.php');
-        exit;
+    if (empty($_POST['email']) || empty($_POST['password'])) {
+        $error = 'Por favor, ingresa un correo y contraseña.';
     } else {
+        $email = $_POST['email'];
+        $password = $_POST['password'];
 
-        logUserActivity(
-            0,
-            'login_attempt', 
-            ['username' => $username, 'status' => 'failed']
-        );
-        $error = 'Correo o contraseña incorrectos.';
+        try {
+            $stmt = $conn->prepare('SELECT * FROM users WHERE email = ?');
+            $stmt->bind_param('s', $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['name'];
+                $_SESSION['role_id'] = $user['role_id'];
+
+                try {
+                    logUserActivity(
+                        $user['id'], 
+                        'login', 
+                        ['username' => $user['name'], 'status' => 'success']
+                    );
+                } catch (Exception $e) {
+                    error_log("Error al registrar actividad: " . $e->getMessage());
+                }
+
+                header('Location: index.php');
+                exit;
+            } else {
+                try {
+                    logUserActivity(
+                        0, 
+                        'login_attempt', 
+                        ['email' => $email, 'status' => 'failed']
+                    );
+                } catch (Exception $e) {
+                    error_log("Error al registrar intento de inicio de sesión: " . $e->getMessage());
+                }
+
+                $error = 'Correo o contraseña incorrectos.';
+            }
+        } catch (Exception $e) {
+            error_log("Error en el inicio de sesión: " . $e->getMessage());
+            $error = 'Error interno del servidor. Inténtalo más tarde.';
+        }
     }
 }
 ?>
