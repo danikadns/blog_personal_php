@@ -3,6 +3,7 @@ require 'session_handler.php';
 require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
+use Aws\Lambda\LambdaClient;
 use Aws\Exception\AwsException;
 
 $handler = new MySQLSessionHandler();
@@ -23,6 +24,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Configura el cliente de S3
     $s3 = new S3Client([
+        'version' => 'latest',
+        'region'  => 'us-east-1',
+    ]);
+
+    $lambda = new LambdaClient([
         'version' => 'latest',
         'region'  => 'us-east-1',
     ]);
@@ -50,6 +56,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Guarda la entrada del blog en la base de datos
             $sql = "INSERT INTO blogs (user_id, title, content, image_url) VALUES ('$user_id', '$title', '$content', '$uniqueFileName')";
             if ($conn->query($sql) === TRUE) {
+                $blog_id = $conn->insert_id;
+
+                // URL del blog recién creado
+                $blog_url = "https://miweb.com/blog/$blog_id";
+
+                // Invoca la función Lambda para notificar a los suscriptores
+                try {
+                    $result = $lambda->invoke([
+                        'FunctionName' => 'arn:aws:lambda:us-east-1:010526258440:function:SuscripcionesBlogs', // ARN de tu función Lambda
+                        'InvocationType' => 'Event', // Ejecución asíncrona
+                        'Payload' => json_encode([
+                            'author_id' => $user_id,
+                            'blog_title' => $title,
+                            'blog_url' => $blog_url,
+                        ]),
+                    ]);
+                    error_log("Llamada a Lambda exitosa: " . json_encode($result));
+                } catch (AwsException $e) {
+                    error_log("Error al llamar a Lambda: " . $e->getMessage());
+                }
+
                 header('Location: blogs.php');
                 exit();
             } else {
