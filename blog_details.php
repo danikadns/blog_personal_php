@@ -58,11 +58,11 @@ if (!$blog_query || $blog_query->num_rows === 0) {
 
 $blog = $blog_query->fetch_assoc();
 
-// Registrar actividad de visualización en DynamoDB
+/*
 logUserActivity($_SESSION['user_id'], 'view_blog', [
     'blog_id' => $blog_id,
     'blog_title' => $blog['title']
-]);
+]);*/
 
 // Generar URL firmada para la imagen
 $image_url = 'default-thumbnail.jpg'; // Imagen predeterminada
