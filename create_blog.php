@@ -1,6 +1,7 @@
 <?php
 require 'session_handler.php';
 require 'vendor/autoload.php';
+require 'dynamo_activity.php';
 
 use Aws\S3\S3Client;
 use Aws\Lambda\LambdaClient;

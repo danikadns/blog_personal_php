@@ -1,5 +1,6 @@
 <?php
 require 'session_handler.php';
+require 'dynamo_activity.php';
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
