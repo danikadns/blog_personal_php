@@ -11,6 +11,18 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Depuración: Mostrar credenciales AWS almacenadas en la sesión
+echo "<h3>Credenciales de AWS (Depuración - Eliminar luego):</h3>";
+echo "<pre>";
+print_r([
+    'aws_access_key' => $_SESSION['aws_access_key'] ?? 'No disponible',
+    'aws_secret_key' => $_SESSION['aws_secret_key'] ?? 'No disponible',
+    'aws_session_token' => $_SESSION['aws_session_token'] ?? 'No disponible',
+    'aws_expiration' => isset($_SESSION['aws_expiration']) ? date('Y-m-d H:i:s', $_SESSION['aws_expiration']) : 'No disponible',
+    'role_arn' => $_SESSION['role_arn'] ?? 'No disponible',
+]);
+echo "</pre>";
+
 if (!isset($_SESSION['aws_access_key'], $_SESSION['aws_secret_key'], $_SESSION['aws_session_token'])) {
     die("Credenciales de AWS no disponibles. Por favor, inicia sesión nuevamente.");
 }
