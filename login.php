@@ -1,15 +1,10 @@
 <?php
 require 'db.php';
 require 'session_handler.php';
-require 'dynamo_activity.php';
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
 session_start();
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $error = '';
 
@@ -32,21 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['username'] = $user['name'];
                 $_SESSION['role_id'] = $user['role_id'];
 
-                // Registro de actividad
-                try {
-                    logUserActivity(
-                        $user['id'],
-                        'login',
-                        ['username' => $user['name'], 'status' => 'success']
-                    );
-                } catch (Exception $e) {
-                    error_log("Error al registrar actividad: " . $e->getMessage());
-                }
+                
 
                 header('Location: index.php');
                 exit;
             } else {
-                logUserActivity(0, 'login_attempt', ['email' => $email, 'status' => 'failed']);
+                
                 $error = 'Correo o contraseña incorrectos.';
             }
         } catch (Exception $e) {
