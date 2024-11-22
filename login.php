@@ -10,7 +10,6 @@ $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
 session_start();
 
-// Habilitar la visualización de errores (solo en desarrollo)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -45,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $roleArn = $role['arn'];
 
                 if (!$roleArn) {
-                    error_log("ARN del rol no encontrado para el usuario.");
                     throw new Exception("No se encontró un ARN de rol para este usuario.");
                 }
 
@@ -63,10 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $credentials = $stsResult->get('Credentials');
 
-                    // Verificar que las credenciales no estén vacías
                     if (!$credentials) {
-                        error_log("No se pudieron obtener credenciales del cliente STS.");
-                        throw new Exception("Error al asumir el rol de AWS.");
+                        throw new Exception("Error al obtener las credenciales del rol.");
                     }
 
                     // Almacenar credenciales en la sesión
@@ -76,13 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['aws_expiration'] = strtotime($credentials['Expiration']);
                     $_SESSION['role_arn'] = $roleArn;
 
-                    // Verificar si las credenciales se almacenaron correctamente
-                    if (!isset($_SESSION['aws_access_key'], $_SESSION['aws_secret_key'], $_SESSION['aws_session_token'])) {
-                        error_log("Error: Las credenciales de AWS no se almacenaron en la sesión.");
-                        throw new Exception("Error al guardar las credenciales de AWS en la sesión.");
-                    }
-
-                    error_log("Credenciales de AWS almacenadas correctamente en la sesión.");
                 } catch (Exception $e) {
                     error_log("Error al asumir el rol: " . $e->getMessage());
                     $error = 'No se pudieron obtener las credenciales necesarias. Inténtalo más tarde.';
@@ -99,21 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     error_log("Error al registrar actividad: " . $e->getMessage());
                 }
 
-                // Redirigir al inicio
                 header('Location: index.php');
                 exit;
             } else {
-                // Registrar intento fallido de inicio de sesión
-                try {
-                    logUserActivity(
-                        0,
-                        'login_attempt',
-                        ['email' => $email, 'status' => 'failed']
-                    );
-                } catch (Exception $e) {
-                    error_log("Error al registrar intento de inicio de sesión: " . $e->getMessage());
-                }
-
+                logUserActivity(0, 'login_attempt', ['email' => $email, 'status' => 'failed']);
                 $error = 'Correo o contraseña incorrectos.';
             }
         } catch (Exception $e) {
@@ -136,41 +114,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="w-full max-w-sm bg-white shadow-lg rounded-lg p-8">
         <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
 
-        <!-- Mensaje de error -->
         <?php if ($error): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
-                <span class="block sm:inline"><?= htmlspecialchars($error) ?></span>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
 
-        <!-- Formulario de inicio de sesión -->
         <form action="login.php" method="POST" class="space-y-6">
             <div>
                 <label for="email" class="block text-gray-700 font-medium mb-2">Correo Electrónico</label>
-                <input type="email" name="email" id="email" required 
-                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
-                    placeholder="example@correo.com">
+                <input type="email" name="email" id="email" required class="w-full border rounded-lg px-4 py-2">
             </div>
-
             <div>
-                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña:</label>
-                <input type="password" name="password" id="password" required 
-                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
-                    placeholder="••••••••">
+                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña</label>
+                <input type="password" name="password" id="password" required class="w-full border rounded-lg px-4 py-2">
             </div>
-
-            <button type="submit" 
-                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
-                Iniciar Sesión
-            </button>
+            <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded-lg">Iniciar Sesión</button>
         </form>
-
-        <!-- Enlace para registrarse -->
         <p class="mt-6 text-center text-gray-600">
-            ¿No tienes cuenta? 
-            <a href="register.php" class="text-blue-500 hover:text-blue-600 font-medium underline">
-                Regístrate
-            </a>
+            ¿No tienes cuenta? <a href="register.php" class="text-blue-500 underline">Regístrate</a>
         </p>
     </div>
 </body>
