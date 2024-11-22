@@ -36,19 +36,14 @@ $s3 = new S3Client([
 ]);
 
 $bucketName = 'almacenamiento-blog-personal';
-
-// Obtener ID del blog desde la URL
+// Obtener el ID del blog desde la URL
 $blog_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($blog_id <= 0) {
-    die("ID del blog no válido.");
-}
 
-// Consultar el blog directamente
-$blog_query = $conn->query("SELECT blogs.*, users.name AS author_name FROM blogs JOIN users ON blogs.user_id = users.id WHERE blogs.id = $blog_id");
-if (!$blog_query || $blog_query->num_rows === 0) {
-    die("El blog solicitado no existe o fue eliminado.");
-}
-
+// Consultar los detalles del blog
+$blog_query = $conn->query("SELECT blogs.*, users.name AS author_name, users.description AS author_description, users.id AS author_id 
+                            FROM blogs 
+                            JOIN users ON blogs.user_id = users.id 
+                            WHERE blogs.id = $blog_id");
 $blog = $blog_query->fetch_assoc();
 
 // Generar URL firmada para la imagen
