@@ -6,10 +6,18 @@ use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 
 function logUserActivity($user_id, $action, $details = []) {
+    // Verificar si `role_arn` está configurado
+    if (!isset($_SESSION['role_arn'])) {
+        error_log("El ARN del rol no está configurado en la sesión. No se puede registrar la actividad.");
+        return; // Salir sin intentar registrar actividad
+    }
+
     try {
+        // Renovar credenciales solo si es necesario
         renewAwsCredentials();
     } catch (Exception $e) {
-        die("Error al renovar credenciales: " . $e->getMessage());
+        error_log("Error al renovar credenciales: " . $e->getMessage());
+        return; // Salir si ocurre un error
     }
 
     // Configurar el cliente DynamoDB con credenciales temporales
@@ -50,4 +58,5 @@ function logUserActivity($user_id, $action, $details = []) {
         error_log("Error al registrar actividad: " . $e->getMessage());
     }
 }
+
 ?>
