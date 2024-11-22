@@ -15,6 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 include 'db.php';
 require 'vendor/autoload.php';
 
+
 use Aws\S3\S3Client;
 /*
 // Renueva credenciales AWS si es necesario
@@ -29,6 +30,12 @@ try {
 }
 */
 // Configurar el cliente S3 con las credenciales renovadas
+
+if (!isset($_SESSION['aws_access_key'], $_SESSION['aws_secret_key'], $_SESSION['aws_session_token'])) {
+    die("Credenciales de AWS no disponibles. Por favor, inicia sesión nuevamente.");
+}
+
+
 $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',
