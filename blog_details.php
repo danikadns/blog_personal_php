@@ -2,14 +2,6 @@
 require 'session_handler.php';
 require 'dynamo_activity.php';
 require 'generateAwsCredentials.php';
-require 'db.php';
-require 'vendor/autoload.php';
-
-use Aws\S3\S3Client;
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -20,17 +12,22 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+include 'db.php';
+require 'vendor/autoload.php';
+
+use Aws\S3\S3Client;
+
+// Generar credenciales AWS
 try {
-    // Generar credenciales AWS
     $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {
     die("Error al generar credenciales de AWS: " . $e->getMessage());
 }
 
-// Configurar cliente S3
+// Configurar cliente S3 con las credenciales generadas
 $s3 = new S3Client([
     'version' => 'latest',
-    'region' => 'us-east-1',
+    'region'  => 'us-east-1',
     'credentials' => [
         'key'    => $awsCredentials['AccessKeyId'],
         'secret' => $awsCredentials['SecretAccessKey'],
@@ -40,29 +37,19 @@ $s3 = new S3Client([
 
 $bucketName = 'almacenamiento-blog-personal';
 
-// Obtener el ID del blog desde la URL
+// Obtener ID del blog desde la URL
 $blog_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($blog_id <= 0) {
     die("ID del blog no válido.");
 }
 
-// Consultar detalles del blog directamente
-$blog_query = $conn->query("SELECT blogs.*, users.name AS author_name, users.description AS author_description, users.id AS author_id 
-                            FROM blogs 
-                            JOIN users ON blogs.user_id = users.id 
-                            WHERE blogs.id = $blog_id");
-
+// Consultar el blog directamente
+$blog_query = $conn->query("SELECT blogs.*, users.name AS author_name FROM blogs JOIN users ON blogs.user_id = users.id WHERE blogs.id = $blog_id");
 if (!$blog_query || $blog_query->num_rows === 0) {
     die("El blog solicitado no existe o fue eliminado.");
 }
 
 $blog = $blog_query->fetch_assoc();
-
-/*
-logUserActivity($_SESSION['user_id'], 'view_blog', [
-    'blog_id' => $blog_id,
-    'blog_title' => $blog['title']
-]);*/
 
 // Generar URL firmada para la imagen
 $image_url = 'default-thumbnail.jpg'; // Imagen predeterminada
@@ -79,7 +66,7 @@ if (!empty($blog['image_url'])) {
     }
 }
 
-// Consultar entradas recientes directamente
+// Consultar entradas recientes
 $recent_blogs = $conn->query("SELECT id, title FROM blogs ORDER BY created_at DESC LIMIT 5");
 ?>
 
@@ -92,6 +79,7 @@ $recent_blogs = $conn->query("SELECT id, title FROM blogs ORDER BY created_at DE
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
+    <!-- Navbar -->
     <?php include 'navbar.php'; ?>
 
     <div class="container mx-auto py-8">
@@ -104,7 +92,7 @@ $recent_blogs = $conn->query("SELECT id, title FROM blogs ORDER BY created_at DE
                 <p class="text-gray-700 mt-6 leading-relaxed"><?= nl2br(htmlspecialchars($blog['content'])) ?></p>
                 <p class="text-gray-800 mt-4">
                     Autor: 
-                    <a href="author_blogs.php?author_id=<?= $blog['author_id'] ?>" class="text-blue-500 hover:underline">
+                    <a href="author_blogs.php?author_id=<?= $blog['user_id'] ?>" class="text-blue-500 hover:underline">
                         <?= htmlspecialchars($blog['author_name']) ?>
                     </a>
                 </p>
