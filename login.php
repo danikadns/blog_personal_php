@@ -91,6 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full">Iniciar Sesión</button>
         </form>
+        <p class="mt-4 text-center text-gray-700">¿No tienes cuenta? <a href="register.php" class="text-indigo-600 hover:underline">Regístrate</a></p>
+
     </div>
 </body>
 </html>
