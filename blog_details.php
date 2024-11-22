@@ -24,12 +24,6 @@ $s3 = new S3Client([
 
 $bucketName = 'almacenamiento-blog-personal';
 
-
-    logUserActivity($_SESSION['user_id'], 'view_blog', [
-        'blog_id' => $blog_id,
-        'blog_title' => $blog['title']
-    ]);
-
 // Obtener el ID del blog desde la URL
 $blog_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -40,6 +34,14 @@ $blog_query = $conn->query("SELECT blogs.*, users.name AS author_name, users.des
                             WHERE blogs.id = $blog_id");
 $blog = $blog_query->fetch_assoc();
 
+
+if ($blog) {
+    // Registro de actividad en DynamoDB
+    logUserActivity($_SESSION['user_id'], 'view_blog', [
+        'blog_id' => $blog_id,
+        'blog_title' => $blog['title']
+    ]);
+}
 if (!$blog) {
     echo "Blog no encontrado.";
     exit;
