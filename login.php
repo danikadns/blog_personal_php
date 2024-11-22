@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $roleArn = $role['arn'];
 
                 if (!$roleArn) {
+                    error_log("ARN del rol no encontrado para el usuario.");
                     throw new Exception("No se encontró un ARN de rol para este usuario.");
                 }
 
@@ -62,12 +63,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $credentials = $stsResult->get('Credentials');
 
+                    // Verificar que las credenciales no estén vacías
+                    if (!$credentials) {
+                        error_log("No se pudieron obtener credenciales del cliente STS.");
+                        throw new Exception("Error al asumir el rol de AWS.");
+                    }
+
                     // Almacenar credenciales en la sesión
                     $_SESSION['aws_access_key'] = $credentials['AccessKeyId'];
                     $_SESSION['aws_secret_key'] = $credentials['SecretAccessKey'];
                     $_SESSION['aws_session_token'] = $credentials['SessionToken'];
                     $_SESSION['aws_expiration'] = strtotime($credentials['Expiration']);
-                    $_SESSION['role_arn'] = $roleArn; // Guardar el ARN para futuras renovaciones
+                    $_SESSION['role_arn'] = $roleArn;
+
+                    // Verificar si las credenciales se almacenaron correctamente
+                    if (!isset($_SESSION['aws_access_key'], $_SESSION['aws_secret_key'], $_SESSION['aws_session_token'])) {
+                        error_log("Error: Las credenciales de AWS no se almacenaron en la sesión.");
+                        throw new Exception("Error al guardar las credenciales de AWS en la sesión.");
+                    }
+
+                    error_log("Credenciales de AWS almacenadas correctamente en la sesión.");
                 } catch (Exception $e) {
                     error_log("Error al asumir el rol: " . $e->getMessage());
                     $error = 'No se pudieron obtener las credenciales necesarias. Inténtalo más tarde.';
@@ -138,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div>
-                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña</label>
+                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña:</label>
                 <input type="password" name="password" id="password" required 
                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
                     placeholder="••••••••">
