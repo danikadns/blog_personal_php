@@ -2,7 +2,7 @@
 include 'db.php';
 require 'vendor/autoload.php';
 require 'session_handler.php';
-require 'renewAwsCredentials.php'; 
+require 'generateAwsCredentials.php'; 
 
 use Aws\Sns\SnsClient;
 use Aws\Exception\AwsException;
@@ -16,21 +16,19 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != '1') {
     exit;
 }
 
-// Renovar credenciales antes de usar AWS
 try {
-    renewAwsCredentials();
+    $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {
-    die("Error al renovar credenciales: " . $e->getMessage());
+    die("Error al generar credenciales de AWS: " . $e->getMessage());
 }
-
 // Configurar el cliente SNS con credenciales renovadas
 $sns = new SnsClient([
     'version' => 'latest',
     'region' => 'us-east-1',
     'credentials' => [
-        'key' => $_SESSION['aws_access_key'],
-        'secret' => $_SESSION['aws_secret_key'],
-        'token' => $_SESSION['aws_session_token'],
+        'key'    => $awsCredentials['AccessKeyId'],
+        'secret' => $awsCredentials['SecretAccessKey'],
+        'token'  => $awsCredentials['SessionToken'],
     ],
 ]);
 

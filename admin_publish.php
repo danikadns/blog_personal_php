@@ -1,7 +1,7 @@
 <?php
 require 'session_handler.php';
 require 'vendor/autoload.php';
-require 'renewAwsCredentials.php'; 
+require 'generateAwsCredentials.php'; 
 use Aws\Sns\SnsClient;
 
 $handler = new MySQLSessionHandler();
@@ -13,11 +13,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != '1') {
     exit;
 }
 
-// Verificar y renovar credenciales
 try {
-    renewAwsCredentials();
+    $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {
-    die("Error: " . $e->getMessage());
+    die("Error al generar credenciales de AWS: " . $e->getMessage());
 }
 
 $message = $subject = $success = $error = '';
@@ -27,9 +26,9 @@ $sns = new SnsClient([
     'version' => 'latest',
     'region' => 'us-east-1',
     'credentials' => [
-        'key' => $_SESSION['aws_access_key'],
-        'secret' => $_SESSION['aws_secret_key'],
-        'token' => $_SESSION['aws_session_token'],
+        'key'    => $awsCredentials['AccessKeyId'],
+        'secret' => $awsCredentials['SecretAccessKey'],
+        'token'  => $awsCredentials['SessionToken'],
     ],
 ]);
 

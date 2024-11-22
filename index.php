@@ -17,7 +17,6 @@ require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
 
-// Generar credenciales dinámicamente
 try {
     $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {

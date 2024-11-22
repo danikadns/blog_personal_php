@@ -2,7 +2,7 @@
 require 'session_handler.php';
 require 'vendor/autoload.php';
 require 'dynamo_activity.php';
-require 'renewAwsCredentials.php';
+require 'generateAwsCredentials.php';
 
 use Aws\S3\S3Client;
 use Aws\Lambda\LambdaClient;
@@ -21,11 +21,10 @@ include 'db.php';
 
 $success_message = $error_message = '';
 
-// Renovar credenciales antes de usar AWS
 try {
-    renewAwsCredentials();
+    $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {
-    die("Error al renovar credenciales: " . $e->getMessage());
+    die("Error al generar credenciales de AWS: " . $e->getMessage());
 }
 
 // Configura los clientes S3 y Lambda con credenciales renovadas
@@ -33,9 +32,9 @@ $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',
     'credentials' => [
-        'key' => $_SESSION['aws_access_key'],
-        'secret' => $_SESSION['aws_secret_key'],
-        'token' => $_SESSION['aws_session_token'],
+        'key'    => $awsCredentials['AccessKeyId'],
+        'secret' => $awsCredentials['SecretAccessKey'],
+        'token'  => $awsCredentials['SessionToken'],
     ],
 ]);
 

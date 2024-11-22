@@ -2,7 +2,7 @@
 require 'session_handler.php';
 require 'vendor/autoload.php';
 require 'db.php';
-require 'renewAwsCredentials.php';
+require 'generateAwsCredentials.php';
 
 use Aws\S3\S3Client;
 
@@ -15,21 +15,19 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Renovar credenciales usando la función centralizada
 try {
-    renewAwsCredentials();
+    $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
 } catch (Exception $e) {
-    die("Error: " . $e->getMessage());
+    die("Error al generar credenciales de AWS: " . $e->getMessage());
 }
-
 // Configuración del cliente S3 con credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',
     'region' => 'us-east-1',
     'credentials' => [
-        'key' => $_SESSION['aws_access_key'],
-        'secret' => $_SESSION['aws_secret_key'],
-        'token' => $_SESSION['aws_session_token'],
+        'key'    => $awsCredentials['AccessKeyId'],
+        'secret' => $awsCredentials['SecretAccessKey'],
+        'token'  => $awsCredentials['SessionToken'],
     ],
 ]);
 
