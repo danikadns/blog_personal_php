@@ -18,6 +18,10 @@ require 'vendor/autoload.php';
 use Aws\S3\S3Client;
 
 // Renueva credenciales AWS si es necesario
+if (!isset($_SESSION['role_arn'])) {
+    die("No se puede renovar las credenciales porque el ARN del rol no está configurado. Por favor, inicia sesión nuevamente.");
+}
+
 try {
     renewAwsCredentials();
 } catch (Exception $e) {
