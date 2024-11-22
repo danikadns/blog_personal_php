@@ -1,8 +1,8 @@
 <?php
 include 'db.php';
-require 'vendor/autoload.php'; // Asegúrate de tener la SDK de AWS instalada
+require 'vendor/autoload.php';
 
-use Aws\S3\S3Client;
+use Aws\Sns\SnsClient;
 use Aws\Exception\AwsException;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -22,46 +22,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
 
     if ($conn->query($sql) === TRUE) {
-        // Obtén el ID del usuario recién creado
-        $user_id = $conn->insert_id;
-
-        // Configura el cliente de S3
-        $s3 = new S3Client([
+        // Suscribir al usuario al tema SNS
+        $sns = new SnsClient([
             'version' => 'latest',
-            'region'  => 'us-east-1', // Cambia según la región de tu bucket
+            'region'  => 'us-east-1',
         ]);
 
-        $bucketName = 'almacenamiento-blog-personal'; 
-        $userFolder = "user-{$user_id}/";
+        $topicArn = 'arn:aws:sns:us-east-1:010526258440:notificaciones_blog_personal';
 
         try {
-            // Crear carpetas en S3
-            $folders = [
-                $userFolder . "thumbnails/",
-                $userFolder . "original/",
-            ];
-
-            foreach ($folders as $folder) {
-                $s3->putObject([
-                    'Bucket' => $bucketName,
-                    'Key'    => $folder, // Simula una carpeta con '/' al final
-                    'Body'   => '', // Objeto vacío
-                    'ACL'    => 'private', // Ajusta si necesitas otro nivel de acceso
-                ]);
-            }
+            $result = $sns->subscribe([
+                'TopicArn' => $topicArn,
+                'Protocol' => 'email', // Protocolo de suscripción
+                'Endpoint' => $email, // Correo del usuario recién creado
+            ]);
 
             // Redirige al usuario a la lista de usuarios
             header('Location: users.php');
             exit();
         } catch (AwsException $e) {
-            // Si hay error en S3, muestra el mensaje y no redirige
-            echo "Error creando carpetas en S3: " . $e->getMessage();
-            error_log("Error en S3: " . $e->getMessage());
+            echo "Error al suscribir al usuario a SNS: " . $e->getMessage();
         }
     } else {
         // Error al insertar en la base de datos
         echo "Error creando usuario: " . $conn->error;
-        error_log("Error en base de datos: " . $conn->error);
     }
 }
 
