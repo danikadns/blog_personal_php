@@ -120,3 +120,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Blog</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        function previewImage() {
+            const input = document.getElementById('image');
+            const preview = document.getElementById('imagePreview');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <?php include 'navbar.php'; ?>
+
+    <div class="container mx-auto py-8">
+        <h1 class="text-3xl font-bold mb-6">Crear Publicación</h1>
+
+        <!-- Mensajes de éxito o error -->
+        <?php if ($success_message): ?>
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg">
+                <?= htmlspecialchars($success_message) ?>
+            </div>
+        <?php elseif ($error_message): ?>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg">
+                <?= htmlspecialchars($error_message) ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="create_blog.php" method="POST" enctype="multipart/form-data" class="bg-white shadow-md rounded-lg p-6 space-y-6">
+            <!-- Campo para el título -->
+            <div>
+                <label for="title" class="block text-sm font-bold text-gray-700 mb-2">Título:</label>
+                <input type="text" name="title" id="title" required class="w-full border rounded-lg py-2 px-3 focus:outline-none focus:ring focus:ring-blue-300">
+            </div>
+            
+            <!-- Campo para el contenido -->
+            <div>
+                <label for="content" class="block text-sm font-bold text-gray-700 mb-2">Contenido:</label>
+                <textarea name="content" id="content" required class="w-full border rounded-lg py-2 px-3 focus:outline-none focus:ring focus:ring-blue-300"></textarea>
+            </div>
+            
+            <!-- Campo para la imagen -->
+            <div>
+                <label for="image" class="block text-sm font-bold text-gray-700 mb-2">Imagen:</label>
+                <input type="file" name="image" id="image" accept="image/*" required onchange="previewImage()" class="w-full border rounded-lg py-2 px-3 focus:outline-none focus:ring focus:ring-blue-300">
+                <!-- Vista previa de la imagen -->
+                <img id="imagePreview" style="display:none; margin-top: 20px; max-width: 100%; height: auto; border-radius: 8px;" alt="Vista previa de la imagen seleccionada">
+            </div>
+            
+            <!-- Botón para publicar -->
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                Publicar
+            </button>
+        </form>
+    </div>
+</body>
+</html>

@@ -38,6 +38,7 @@ $user = $conn->query("SELECT name, email, description FROM users WHERE id = $use
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include 'navbar.php'; ?>
 <div class="container mx-auto py-8">
     <h1 class="text-3xl font-bold mb-4">Editar Perfil</h1>
     <?php if (isset($message)): ?>
