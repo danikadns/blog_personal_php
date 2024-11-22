@@ -1,6 +1,9 @@
 <?php
 require 'session_handler.php';
 require 'db.php';
+
+$handler = new MySQLSessionHandler();
+session_set_save_handler($handler, true);
 session_start();
 
 if (!isset($_SESSION['user_id'])) {

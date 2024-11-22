@@ -1,14 +1,26 @@
 <?php
 require 'vendor/autoload.php';
+require 'renewAwsCredentials.php'; 
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 
 function logUserActivity($user_id, $action, $details = []) {
-    // Configurar el cliente DynamoDB
+    try {
+        renewAwsCredentials();
+    } catch (Exception $e) {
+        die("Error al renovar credenciales: " . $e->getMessage());
+    }
+
+    // Configurar el cliente DynamoDB con credenciales temporales
     $dynamodb = new DynamoDbClient([
         'region' => 'us-east-1',
-        'version' => 'latest'
+        'version' => 'latest',
+        'credentials' => [
+            'key' => $_SESSION['aws_access_key'],
+            'secret' => $_SESSION['aws_secret_key'],
+            'token' => $_SESSION['aws_session_token'],
+        ],
     ]);
 
     $tableName = 'data_activity';
@@ -31,12 +43,11 @@ function logUserActivity($user_id, $action, $details = []) {
     try {
         $result = $dynamodb->putItem([
             'TableName' => $tableName,
-            'Item' => $item
+            'Item' => $item,
         ]);
         error_log("Actividad registrada: " . json_encode($result));
     } catch (DynamoDbException $e) {
         error_log("Error al registrar actividad: " . $e->getMessage());
     }
 }
-
 ?>

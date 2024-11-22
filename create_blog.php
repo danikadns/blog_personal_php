@@ -2,6 +2,7 @@
 require 'session_handler.php';
 require 'vendor/autoload.php';
 require 'dynamo_activity.php';
+require 'renewAwsCredentials.php';
 
 use Aws\S3\S3Client;
 use Aws\Lambda\LambdaClient;
@@ -20,24 +21,41 @@ include 'db.php';
 
 $success_message = $error_message = '';
 
+// Renovar credenciales antes de usar AWS
+try {
+    renewAwsCredentials();
+} catch (Exception $e) {
+    die("Error al renovar credenciales: " . $e->getMessage());
+}
+
+// Configura los clientes S3 y Lambda con credenciales renovadas
+$s3 = new S3Client([
+    'version' => 'latest',
+    'region'  => 'us-east-1',
+    'credentials' => [
+        'key' => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token' => $_SESSION['aws_session_token'],
+    ],
+]);
+
+$lambda = new LambdaClient([
+    'version' => 'latest',
+    'region'  => 'us-east-1',
+    'credentials' => [
+        'key' => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token' => $_SESSION['aws_session_token'],
+    ],
+]);
+
+$bucketName = 'almacenamiento-blog-personal';
+$originalFolder = "original/";
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = $_POST['title'];
     $content = $_POST['content'];
     $user_id = $_SESSION['user_id'];
-
-    // Configura el cliente de S3
-    $s3 = new S3Client([
-        'version' => 'latest',
-        'region'  => 'us-east-1',
-    ]);
-
-    $lambda = new LambdaClient([
-        'version' => 'latest',
-        'region'  => 'us-east-1',
-    ]);
-
-    $bucketName = 'almacenamiento-blog-personal';
-    $originalFolder = "original/";
 
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['image']['tmp_name'];

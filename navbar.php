@@ -7,6 +7,7 @@
                 <li><a href="create_blog.php" class="hover:underline">Crear Blog</a></li>
             <?php if ($_SESSION['role_id'] == 1): ?>
                 <li><a href="users.php" class="hover:underline">Gestión de Usuarios</a></li>
+                <li><a href="admin_publish.php" class="hover:underline">Publicar anuncio</a></li>
             <?php endif; ?>
             <li><a href="account.php" class="hover:underline">Mis publicaciones</a></li>
             <li><a href="edit_profile.php" class="hover:underline">Editar Perfil</a></li>

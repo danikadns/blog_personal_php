@@ -2,6 +2,7 @@
 require 'session_handler.php';
 require 'db.php';
 require 'vendor/autoload.php';
+require 'renewAwsCredentials.php';
 
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
@@ -15,9 +16,22 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Verificar y renovar credenciales
+try {
+    renewAwsCredentials();
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
+}
+
+// Crear cliente S3 con credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',
-    'region'  => 'us-east-1',
+    'region' => 'us-east-1',
+    'credentials' => [
+        'key' => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token' => $_SESSION['aws_session_token'],
+    ],
 ]);
 
 $bucketName = 'almacenamiento-blog-personal';

@@ -1,6 +1,7 @@
 <?php
 require 'session_handler.php';
 require 'dynamo_activity.php';
+require 'renewAwsCredentials.php'; 
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -16,9 +17,22 @@ require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
 
+// Renueva credenciales AWS si es necesario
+try {
+    renewAwsCredentials();
+} catch (Exception $e) {
+    die("Error al renovar las credenciales de AWS: " . $e->getMessage());
+}
+
+// Configurar el cliente S3 con las credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',
+    'credentials' => [
+        'key'    => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token'  => $_SESSION['aws_session_token'],
+    ],
 ]);
 
 $bucketName = 'almacenamiento-blog-personal';
@@ -54,7 +68,7 @@ $blogs = $conn->query("SELECT blogs.*, users.name AS author_name
                             'Bucket' => $bucketName,
                             'Key'    => 'thumbnails/' . htmlspecialchars($blog['image_url']),
                         ]);
-                        $request = $s3->createPresignedRequest($cmd, '+10 hour');
+                        $request = $s3->createPresignedRequest($cmd, '+10 hours');
                         $image_url = (string)$request->getUri();
                     } catch (Exception $e) {
                         $image_url = 'default-thumbnail.jpg';

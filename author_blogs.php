@@ -1,5 +1,10 @@
 <?php
 require 'session_handler.php';
+require 'vendor/autoload.php';
+require 'db.php';
+require 'renewAwsCredentials.php';
+
+use Aws\S3\S3Client;
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -10,14 +15,22 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-include 'db.php';
-require 'vendor/autoload.php';
+// Renovar credenciales usando la función centralizada
+try {
+    renewAwsCredentials();
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
+}
 
-use Aws\S3\S3Client;
-
+// Configuración del cliente S3 con credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',
-    'region'  => 'us-east-1',
+    'region' => 'us-east-1',
+    'credentials' => [
+        'key' => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token' => $_SESSION['aws_session_token'],
+    ],
 ]);
 
 $bucketName = 'almacenamiento-blog-personal';

@@ -2,12 +2,14 @@
 require 'db.php';
 require 'session_handler.php';
 require 'dynamo_activity.php';
+require 'vendor/autoload.php';
+
+use Aws\Sts\StsClient;
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
 session_start();
 
-// Habilitar la visualización de errores (solo en desarrollo)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -33,23 +35,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['username'] = $user['name'];
                 $_SESSION['role_id'] = $user['role_id'];
 
+                // Obtener el ARN del rol desde la tabla roles
+                $stmt = $conn->prepare('SELECT arn FROM roles WHERE id = ?');
+                $stmt->bind_param('i', $user['role_id']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $role = $result->fetch_assoc();
+                $roleArn = $role['arn'];
+
+                if (!$roleArn) {
+                    throw new Exception("No se encontró un ARN de rol para este usuario.");
+                }
+
+                // Asumir el rol con AWS STS
+                $stsClient = new StsClient([
+                    'version' => 'latest',
+                    'region' => 'us-east-1',
+                ]);
+
+                try {
+                    $stsResult = $stsClient->assumeRole([
+                        'RoleArn' => $roleArn,
+                        'RoleSessionName' => 'SessionForUser_' . $user['id'],
+                    ]);
+
+                    $credentials = $stsResult->get('Credentials');
+
+                    // Almacenar credenciales en la sesión
+                    $_SESSION['aws_access_key'] = $credentials['AccessKeyId'];
+                    $_SESSION['aws_secret_key'] = $credentials['SecretAccessKey'];
+                    $_SESSION['aws_session_token'] = $credentials['SessionToken'];
+                    $_SESSION['aws_expiration'] = strtotime($credentials['Expiration']);
+                    $_SESSION['role_arn'] = $roleArn; // Guardar el ARN para futuras renovaciones
+                } catch (Exception $e) {
+                    error_log("Error al asumir el rol: " . $e->getMessage());
+                    $error = 'No se pudieron obtener las credenciales necesarias. Inténtalo más tarde.';
+                }
+
+                // Registro de actividad
                 try {
                     logUserActivity(
-                        $user['id'], 
-                        'login', 
+                        $user['id'],
+                        'login',
                         ['username' => $user['name'], 'status' => 'success']
                     );
                 } catch (Exception $e) {
                     error_log("Error al registrar actividad: " . $e->getMessage());
                 }
 
+                // Redirigir al inicio
                 header('Location: index.php');
                 exit;
             } else {
+                // Registrar intento fallido de inicio de sesión
                 try {
                     logUserActivity(
-                        0, 
-                        'login_attempt', 
+                        0,
+                        'login_attempt',
                         ['email' => $email, 'status' => 'failed']
                     );
                 } catch (Exception $e) {

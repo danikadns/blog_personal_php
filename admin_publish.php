@@ -1,7 +1,7 @@
 <?php
 require 'session_handler.php';
 require 'vendor/autoload.php';
-
+require 'renewAwsCredentials.php'; 
 use Aws\Sns\SnsClient;
 
 $handler = new MySQLSessionHandler();
@@ -13,16 +13,29 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != '1') {
     exit;
 }
 
+// Verificar y renovar credenciales
+try {
+    renewAwsCredentials();
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
+}
+
 $message = $subject = $success = $error = '';
+
+// Crear cliente SNS con credenciales renovadas
+$sns = new SnsClient([
+    'version' => 'latest',
+    'region' => 'us-east-1',
+    'credentials' => [
+        'key' => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token' => $_SESSION['aws_session_token'],
+    ],
+]);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $message = $_POST['message'];
     $subject = $_POST['subject'];
-
-    $sns = new SnsClient([
-        'version' => 'latest',
-        'region'  => 'us-east-1',
-    ]);
 
     $topicArn = 'arn:aws:sns:us-east-1:010526258440:notificaciones_blog_personal';
 

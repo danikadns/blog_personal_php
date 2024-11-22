@@ -1,9 +1,38 @@
 <?php
 include 'db.php';
 require 'vendor/autoload.php';
+require 'session_handler.php';
+require 'renewAwsCredentials.php'; 
 
 use Aws\Sns\SnsClient;
 use Aws\Exception\AwsException;
+
+$handler = new MySQLSessionHandler();
+session_set_save_handler($handler, true);
+session_start();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != '1') {
+    header('Location: login.php');
+    exit;
+}
+
+// Renovar credenciales antes de usar AWS
+try {
+    renewAwsCredentials();
+} catch (Exception $e) {
+    die("Error al renovar credenciales: " . $e->getMessage());
+}
+
+// Configurar el cliente SNS con credenciales renovadas
+$sns = new SnsClient([
+    'version' => 'latest',
+    'region' => 'us-east-1',
+    'credentials' => [
+        'key' => $_SESSION['aws_access_key'],
+        'secret' => $_SESSION['aws_secret_key'],
+        'token' => $_SESSION['aws_session_token'],
+    ],
+]);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
@@ -22,19 +51,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
 
     if ($conn->query($sql) === TRUE) {
-        // Suscribir al usuario al tema SNS
-        $sns = new SnsClient([
-            'version' => 'latest',
-            'region'  => 'us-east-1',
-        ]);
-
         $topicArn = 'arn:aws:sns:us-east-1:010526258440:notificaciones_blog_personal';
 
         try {
+            // Suscribir al usuario al tema SNS
             $result = $sns->subscribe([
                 'TopicArn' => $topicArn,
-                'Protocol' => 'email', // Protocolo de suscripción
-                'Endpoint' => $email, // Correo del usuario recién creado
+                'Protocol' => 'email',
+                'Endpoint' => $email,
             ]);
 
             // Redirige al usuario a la lista de usuarios
