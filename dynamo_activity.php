@@ -6,11 +6,18 @@ use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 
 function logUserActivity($user_id, $action, $details = []) {
-   
+    $awsCredentials = null;
+
     try {
         $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
     } catch (Exception $e) {
-        die("Error al generar credenciales de AWS: " . $e->getMessage());
+        error_log("Error al generar credenciales de AWS: " . $e->getMessage());
+        return; // Salir de la función, pero no detener el script.
+    }
+
+    if (!$awsCredentials) {
+        error_log("No se pudieron generar credenciales de AWS.");
+        return;
     }
 
     $dynamodb = new DynamoDbClient([
@@ -18,8 +25,8 @@ function logUserActivity($user_id, $action, $details = []) {
         'version' => 'latest',
         'credentials' => [
             'key'    => $awsCredentials['AccessKeyId'],
-        'secret' => $awsCredentials['SecretAccessKey'],
-        'token'  => $awsCredentials['SessionToken'],
+            'secret' => $awsCredentials['SecretAccessKey'],
+            'token'  => $awsCredentials['SessionToken'],
         ],
     ]);
 
@@ -47,8 +54,6 @@ function logUserActivity($user_id, $action, $details = []) {
         ]);
         error_log("Actividad registrada: " . json_encode($result));
     } catch (DynamoDbException $e) {
-        error_log("Error al registrar actividad: " . $e->getMessage());
+        error_log("Error al registrar actividad en DynamoDB: " . $e->getMessage());
     }
 }
-
-?>
