@@ -1,7 +1,7 @@
 <?php
 require 'session_handler.php';
 require 'dynamo_activity.php';
-require 'renewAwsCredentials.php'; 
+//require 'renewAwsCredentials.php'; 
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -16,7 +16,7 @@ include 'db.php';
 require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
-
+/*
 // Renueva credenciales AWS si es necesario
 if (!isset($_SESSION['role_arn'])) {
     die("No se puede renovar las credenciales porque el ARN del rol no está configurado. Por favor, inicia sesión nuevamente.");
@@ -27,7 +27,7 @@ try {
 } catch (Exception $e) {
     die("Error al renovar las credenciales de AWS: " . $e->getMessage());
 }
-
+*/
 // Configurar el cliente S3 con las credenciales renovadas
 $s3 = new S3Client([
     'version' => 'latest',

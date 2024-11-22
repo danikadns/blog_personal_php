@@ -1,13 +1,13 @@
 <?php
 require 'vendor/autoload.php';
-require 'renewAwsCredentials.php'; 
+//require 'renewAwsCredentials.php'; 
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 
 function logUserActivity($user_id, $action, $details = []) {
     // Verificar si `role_arn` está configurado
-    if (!isset($_SESSION['role_arn'])) {
+   /* if (!isset($_SESSION['role_arn'])) {
         error_log("El ARN del rol no está configurado en la sesión. No se puede registrar la actividad.");
         return; // Salir sin intentar registrar actividad
     }
@@ -18,7 +18,7 @@ function logUserActivity($user_id, $action, $details = []) {
     } catch (Exception $e) {
         error_log("Error al renovar credenciales: " . $e->getMessage());
         return; // Salir si ocurre un error
-    }
+    }*/
 
     // Configurar el cliente DynamoDB con credenciales temporales
     $dynamodb = new DynamoDbClient([
