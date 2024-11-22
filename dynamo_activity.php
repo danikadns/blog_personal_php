@@ -1,33 +1,25 @@
 <?php
 require 'vendor/autoload.php';
-//require 'renewAwsCredentials.php'; 
+require 'generateAwsCredentials.php'; 
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 
 function logUserActivity($user_id, $action, $details = []) {
-    // Verificar si `role_arn` está configurado
-   /* if (!isset($_SESSION['role_arn'])) {
-        error_log("El ARN del rol no está configurado en la sesión. No se puede registrar la actividad.");
-        return; // Salir sin intentar registrar actividad
+   
+    try {
+        $awsCredentials = generateAwsCredentials($_SESSION['user_id']);
+    } catch (Exception $e) {
+        die("Error al generar credenciales de AWS: " . $e->getMessage());
     }
 
-    try {
-        // Renovar credenciales solo si es necesario
-        renewAwsCredentials();
-    } catch (Exception $e) {
-        error_log("Error al renovar credenciales: " . $e->getMessage());
-        return; // Salir si ocurre un error
-    }*/
-
-    // Configurar el cliente DynamoDB con credenciales temporales
     $dynamodb = new DynamoDbClient([
         'region' => 'us-east-1',
         'version' => 'latest',
         'credentials' => [
-            'key' => $_SESSION['aws_access_key'],
-            'secret' => $_SESSION['aws_secret_key'],
-            'token' => $_SESSION['aws_session_token'],
+            'key'    => $awsCredentials['AccessKeyId'],
+        'secret' => $awsCredentials['SecretAccessKey'],
+        'token'  => $awsCredentials['SessionToken'],
         ],
     ]);
 
