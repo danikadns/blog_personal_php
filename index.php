@@ -11,6 +11,17 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include 'db.php';
+require 'vendor/autoload.php';
+
+use Aws\S3\S3Client;
+
+// Configura el cliente de S3
+$s3 = new S3Client([
+    'version' => 'latest',
+    'region'  => 'us-east-1',
+]);
+
+$bucketName = 'almacenamiento-blog-personal';
 
 // Consultar los blogs más recientes
 $blogs = $conn->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 6");
@@ -67,8 +78,17 @@ $blogs = $conn->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 6");
         <!-- Grid de blogs -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php while ($blog = $blogs->fetch_assoc()): 
-                // Generar la URL de la imagen desde el bucket S3
-                $image_url = "https://almacenamiento-blog-personal.s3.amazonaws.com/original/" . htmlspecialchars($blog['image_url']);
+                try {
+                    // Generar URL firmada para la imagen
+                    $cmd = $s3->getCommand('GetObject', [
+                        'Bucket' => $bucketName,
+                        'Key'    => 'original/' . htmlspecialchars($blog['image_url']),
+                    ]);
+                    $request = $s3->createPresignedRequest($cmd, '+10 hour'); // URL válida por 1 hora
+                    $image_url = (string) $request->getUri();
+                } catch (Exception $e) {
+                    $image_url = ''; // En caso de error, puedes mostrar una imagen de reemplazo
+                }
             ?>
                 <!-- Blog individual -->
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
