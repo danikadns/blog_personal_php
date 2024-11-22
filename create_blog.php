@@ -105,7 +105,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         error_log("Error al llamar a Lambda: " . $e->getMessage());
                     }
 
-                    $success_message = "¡Publicación creada con éxito!";
+                    header("Location: blog_details.php?id=$blog_id&success=1");
+                    exit();
                 } else {
                     $error_message = "Error al guardar en la base de datos: " . $conn->error;
                 }
