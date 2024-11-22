@@ -11,6 +11,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include 'db.php';
+
+// Consultar los blogs más recientes
+$blogs = $conn->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 6");
 ?>
 
 <!DOCTYPE html>
@@ -20,35 +23,68 @@ include 'db.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - Blog Personal</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        // Mostrar/Ocultar el submenú al hacer clic en "Perfil"
+        function toggleMenu() {
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="container mx-auto">
-        <h1 class="text-4xl font-bold mb-6">Bienvenido a tu Blog Personal</h1>
-        
-        <nav class="mb-6">
-            <ul class="flex space-x-4">
-                <li><a href="blogs.php" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ver Blogs</a></li>
-                <li><a href="create_blog.php" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Crear una entrada</a></li>
-                <li><a href="users.php" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Gestión de Usuarios</a></li>
-                <li><a href="account.php" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">Mi Cuenta</a></li>
-                <li><a href="logout.php" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar Sesión</a></li>
-            </ul>
+<body class="bg-gray-100">
+    <!-- Contenedor principal -->
+    <div class="container mx-auto px-4 md:px-8 lg:px-16 py-8">
+        <!-- Barra de navegación -->
+        <nav class="bg-white shadow-md p-4 rounded mb-8">
+            <div class="flex justify-between items-center">
+                <!-- Logo o título -->
+                <h1 class="text-2xl font-bold text-gray-700">Blog Personal</h1>
+
+                <!-- Menú de navegación -->
+                <ul class="flex space-x-4">
+                    <li><a href="blogs.php" class="text-gray-700 hover:text-blue-500 font-semibold">Ver Blogs</a></li>
+                    <li><a href="create_blog.php" class="text-gray-700 hover:text-blue-500 font-semibold">Crear Blog</a></li>
+                    <li><a href="users.php" class="text-gray-700 hover:text-blue-500 font-semibold">Gestión de Usuarios</a></li>
+                </ul>
+
+                <!-- Menú desplegable de perfil -->
+                <div class="relative">
+                    <button onclick="toggleMenu()" class="bg-blue-500 text-white px-4 py-2 rounded focus:outline-none">
+                        Ver Perfil
+                    </button>
+                    <!-- Submenú -->
+                    <div id="profileMenu" class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded hidden">
+                        <a href="account.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Mi Cuenta</a>
+                        <a href="logout.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Cerrar Sesión</a>
+                    </div>
+                </div>
+            </div>
         </nav>
 
-        <section>
-            <h2 class="text-2xl font-bold mb-4">Últimos Blogs</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php
-                $blogs = $conn->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 6");
-                while ($blog = $blogs->fetch_assoc()): ?>
-                    <div class="bg-white shadow-md rounded-lg p-4">
-                        <h3 class="text-xl font-bold"><?= htmlspecialchars($blog['title']) ?></h3>
-                        <p class="text-gray-700"><?= substr(htmlspecialchars($blog['content']), 0, 100) ?>...</p>
-                        <a href="blog_details.php?id=<?= $blog['id'] ?>" class="text-blue-500 hover:text-blue-700">Leer más</a>
+        <!-- Título principal -->
+        <h2 class="text-3xl font-bold text-gray-700 mb-6">Últimos Blogs</h2>
+
+        <!-- Grid de blogs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <?php while ($blog = $blogs->fetch_assoc()): 
+                // Generar la URL de la imagen desde el bucket S3
+                $image_url = "https://almacenamiento-blog-personal.s3.amazonaws.com/original/" . htmlspecialchars($blog['image_url']);
+            ?>
+                <!-- Blog individual -->
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <!-- Imagen -->
+                    <img src="<?= $image_url ?>" alt="Blog Image" class="w-full h-48 object-cover">
+                    <!-- Contenido -->
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold text-gray-800"><?= htmlspecialchars($blog['title']) ?></h3>
+                        <p class="text-gray-600 mt-2"><?= substr(htmlspecialchars($blog['content']), 0, 100) ?>...</p>
+                        <a href="blog_details.php?id=<?= $blog['id'] ?>" class="text-blue-500 hover:underline mt-4 block">
+                            Leer más
+                        </a>
                     </div>
-                <?php endwhile; ?>
-            </div>
-        </section>
+                </div>
+            <?php endwhile; ?>
+        </div>
     </div>
 </body>
 </html>
