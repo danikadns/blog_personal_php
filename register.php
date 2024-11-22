@@ -19,41 +19,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($name) || empty($username) || empty($password) || empty($email)) {
         $error = "Todos los campos son obligatorios.";
     } else {
-        // Encripta la contraseña
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        // Validar que el email y el username sean únicos
+        $email_check = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $email_check->bind_param('s', $email);
+        $email_check->execute();
+        $email_result = $email_check->get_result();
 
-        // Insertar usuario en la base de datos
-        $sql = "INSERT INTO users (name, username, password, email, phone_number, description) 
-                VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$description')";
+        $username_check = $conn->prepare("SELECT id FROM users WHERE username = ?");
+        $username_check->bind_param('s', $username);
+        $username_check->execute();
+        $username_result = $username_check->get_result();
 
-        if ($conn->query($sql) === TRUE) {
-            $sqs = new SqsClient([
-                'version' => 'latest',
-                'region'  => 'us-east-1',
-            ]);
-
-            $queueUrl = 'https://sqs.us-east-1.amazonaws.com/010526258440/UserRegistrationQueue';
-
-            try {
-                $messageBody = json_encode([
-                    'email' => $email,
-                    'name' => $name,
-                    'action' => 'verify_email',
-                ]);
-
-                // Enviar mensaje a la cola SQS
-                $result = $sqs->sendMessage([
-                    'QueueUrl'    => $queueUrl,
-                    'MessageBody' => $messageBody,
-                ]);
-
-                header('Location: login.php?success=1');
-                exit();
-            } catch (AwsException $e) {
-                $error = "Error al enviar el mensaje a SQS: " . $e->getMessage();
-            }
+        if ($email_result->num_rows > 0) {
+            $error = "El correo electrónico ya está registrado.";
+        } elseif ($username_result->num_rows > 0) {
+            $error = "El nombre de usuario ya está registrado.";
         } else {
-            $error = "Error creando usuario: " . $conn->error;
+            // Encripta la contraseña
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+            // Insertar usuario en la base de datos con role_id predeterminado (2)
+            $sql = "INSERT INTO users (name, username, password, email, phone_number, description, role_id) 
+                    VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$description', 2)";
+
+            if ($conn->query($sql) === TRUE) {
+                $sqs = new SqsClient([
+                    'version' => 'latest',
+                    'region'  => 'us-east-1',
+                ]);
+
+                $queueUrl = 'https://sqs.us-east-1.amazonaws.com/010526258440/UserRegistrationQueue';
+
+                try {
+                    $messageBody = json_encode([
+                        'email' => $email,
+                        'name' => $name,
+                        'action' => 'verify_email',
+                    ]);
+
+                    // Enviar mensaje a la cola SQS
+                    $result = $sqs->sendMessage([
+                        'QueueUrl'    => $queueUrl,
+                        'MessageBody' => $messageBody,
+                    ]);
+
+                    header('Location: login.php?success=1');
+                    exit();
+                } catch (AwsException $e) {
+                    $error = "Error al enviar el mensaje a SQS: " . $e->getAwsErrorMessage();
+                }
+            } else {
+                $error = "Error creando usuario: " . $conn->error;
+            }
         }
     }
 }
@@ -70,7 +87,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body class="bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 min-h-screen flex justify-center items-center">
     <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
         <h2 class="text-3xl font-bold mb-4 text-center text-gray-800">Crear Cuenta</h2>
-        <?php if (isset($error)): ?>
+        <?php if ($error): ?>
             <p class="text-red-500 mb-4"><?= $error ?></p>
         <?php endif; ?>
         <form action="register.php" method="POST" class="space-y-4">
