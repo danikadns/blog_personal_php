@@ -10,12 +10,6 @@ $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
 session_start();
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-$error = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($_POST['email']) || empty($_POST['password'])) {
         $error = 'Por favor, ingresa un correo y contraseña.';
@@ -120,12 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="w-full max-w-sm bg-white shadow-lg rounded-lg p-8">
         <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
 
-        <!-- Mensaje de error -->
-        <?php if ($error): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
-                <span class="block sm:inline"><?= htmlspecialchars($error) ?></span>
-            </div>
-        <?php endif; ?>
+
 
         <!-- Formulario de inicio de sesión -->
         <form action="login.php" method="POST" class="space-y-6">
