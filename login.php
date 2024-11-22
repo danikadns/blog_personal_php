@@ -74,25 +74,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Iniciar Sesión</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 flex justify-center items-center h-screen">
-    <div class="w-full max-w-md bg-white shadow-md rounded-lg p-6">
-        <h2 class="text-2xl font-bold mb-4">Iniciar Sesión</h2>
-        <?php if ($error): ?>
-            <p class="text-red-500 mb-4"><?= $error ?></p>
-        <?php endif; ?>
-        <form action="login.php" method="POST" class="space-y-4">
-            <div>
-                <label for="email" class="block text-gray-700 font-bold mb-2">Correo Electrónico:</label>
-                <input type="email" name="email" id="email" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-            </div>
-            <div>
-                <label for="password" class="block text-gray-700 font-bold mb-2">Contraseña:</label>
-                <input type="password" name="password" id="password" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-            </div>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full">Iniciar Sesión</button>
-        </form>
-        <p class="mt-4 text-center text-gray-700">¿No tienes cuenta? <a href="register.php" class="text-indigo-600 hover:underline">Regístrate</a></p>
+<body class="bg-gradient-to-r from-blue-500 to-indigo-600 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-sm bg-white shadow-lg rounded-lg p-8">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
 
+        <!-- Mensaje de error -->
+        <?php if ($error): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                <span class="block sm:inline"><?= htmlspecialchars($error) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <!-- Formulario de inicio de sesión -->
+        <form action="login.php" method="POST" class="space-y-6">
+            <div>
+                <label for="email" class="block text-gray-700 font-medium mb-2">Correo Electrónico</label>
+                <input type="email" name="email" id="email" required 
+                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                    placeholder="example@correo.com">
+            </div>
+
+            <div>
+                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña</label>
+                <input type="password" name="password" id="password" required 
+                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                    placeholder="••••••••">
+            </div>
+
+            <button type="submit" 
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                Iniciar Sesión
+            </button>
+        </form>
+
+        <!-- Enlace para registrarse -->
+        <p class="mt-6 text-center text-gray-600">
+            ¿No tienes cuenta? 
+            <a href="register.php" class="text-blue-500 hover:text-blue-600 font-medium underline">
+                Regístrate
+            </a>
+        </p>
     </div>
 </body>
 </html>

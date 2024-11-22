@@ -28,7 +28,7 @@ $author_query = $conn->query("SELECT name, description FROM users WHERE id = $au
 $author = $author_query->fetch_assoc();
 
 if (!$author) {
-    echo "Autor no encontrado.";
+    header('Location: error.php?message=Autor no encontrado');
     exit;
 }
 
@@ -44,66 +44,57 @@ $blogs = $conn->query("SELECT * FROM blogs WHERE user_id = $author_id ORDER BY c
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto py-8">
-        <!-- Barra de navegación -->
-        <nav class="bg-white shadow-md p-4 rounded mb-8">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-700"><?= htmlspecialchars($author['name']) ?></h1>
-                <ul class="flex space-x-4">
-                    <li><a href="index.php" class="text-gray-700 hover:text-blue-500 font-semibold">Inicio</a></li>
-                </ul>
-                <div class="relative">
-                    <button onclick="toggleMenu()" class="bg-blue-500 text-white px-4 py-2 rounded focus:outline-none">
-                        Ver Perfil
-                    </button>
-                    <div id="profileMenu" class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded hidden">
-                        <a href="account.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Mi Cuenta</a>
-                        <a href="logout.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Cerrar Sesión</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
+    <?php include 'navbar.php'; ?>
 
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-3xl font-bold text-gray-700 mb-4">Sobre <?= htmlspecialchars($author['name']) ?></h2>
+    <div class="container mx-auto py-8">
+        <!-- Información del autor -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Sobre <?= htmlspecialchars($author['name']) ?></h2>
             <p class="text-gray-600"><?= htmlspecialchars($author['description']) ?></p>
-            
+
             <!-- Botón de suscripción -->
             <form action="subscribe_to_author.php" method="POST" class="mt-4">
                 <input type="hidden" name="author_id" value="<?= $author_id ?>">
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
                     Suscribirse a este autor
                 </button>
             </form>
         </div>
 
-        <h2 class="text-3xl font-bold text-gray-700 mb-6">Entradas de <?= htmlspecialchars($author['name']) ?></h2>
+        <!-- Entradas del autor -->
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Entradas de <?= htmlspecialchars($author['name']) ?></h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php while ($blog = $blogs->fetch_assoc()): 
-                try {
-                    $cmd = $s3->getCommand('GetObject', [
-                        'Bucket' => $bucketName,
-                        'Key'    => 'original/' . htmlspecialchars($blog['image_url']),
-                    ]);
-                    $request = $s3->createPresignedRequest($cmd, '+1 hour');
-                    $image_url = (string)$request->getUri();
-                } catch (Exception $e) {
-                    $image_url = '';
-                }
-            ?>
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <img src="<?= $image_url ?>" alt="<?= htmlspecialchars($blog['title']) ?>" class="w-full h-48 object-cover">
-                    <div class="p-4">
-                        <h3 class="text-xl font-bold text-gray-800"><?= htmlspecialchars($blog['title']) ?></h3>
-                        <p class="text-gray-600 mt-2"><?= substr(htmlspecialchars($blog['content']), 0, 100) ?>...</p>
-                        <a href="blog_details.php?id=<?= $blog['id'] ?>" class="text-blue-500 hover:underline mt-4 block">
-                            Leer más
-                        </a>
+        <?php if ($blogs->num_rows > 0): ?>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php while ($blog = $blogs->fetch_assoc()): 
+                    try {
+                        $cmd = $s3->getCommand('GetObject', [
+                            'Bucket' => $bucketName,
+                            'Key'    => 'original/' . htmlspecialchars($blog['image_url']),
+                        ]);
+                        $request = $s3->createPresignedRequest($cmd, '+1 hour');
+                        $image_url = (string)$request->getUri();
+                    } catch (Exception $e) {
+                        $image_url = 'default-thumbnail.jpg'; // Imagen predeterminada
+                    }
+                ?>
+                    <div class="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                        <img src="<?= $image_url ?>" alt="<?= htmlspecialchars($blog['title']) ?>" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-xl font-bold text-gray-800"><?= htmlspecialchars($blog['title']) ?></h3>
+                            <p class="text-gray-600 mt-2"><?= substr(htmlspecialchars($blog['content']), 0, 100) ?>...</p>
+                            <a href="blog_details.php?id=<?= $blog['id'] ?>" class="text-blue-500 hover:underline mt-4 block">
+                                Leer más
+                            </a>
+                        </div>
                     </div>
-                </div>
-            <?php endwhile; ?>
-        </div>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <div class="bg-white shadow-md rounded-lg p-6 text-center">
+                <p class="text-gray-600">Este autor aún no tiene entradas publicadas.</p>
+            </div>
+        <?php endif; ?>
     </div>
 </body>
 </html>

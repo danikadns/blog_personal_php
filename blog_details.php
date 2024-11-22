@@ -16,7 +16,6 @@ require 'vendor/autoload.php';
 
 use Aws\S3\S3Client;
 
-// Configura el cliente de S3
 $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',
@@ -34,30 +33,29 @@ $blog_query = $conn->query("SELECT blogs.*, users.name AS author_name, users.des
                             WHERE blogs.id = $blog_id");
 $blog = $blog_query->fetch_assoc();
 
+// Si no se encuentra el blog
+if (!$blog) {
+    $error_message = "El blog solicitado no se encuentra disponible.";
+}
 
+// Registro de actividad solo si el blog existe
 if ($blog) {
-    // Registro de actividad en DynamoDB
     logUserActivity($_SESSION['user_id'], 'view_blog', [
         'blog_id' => $blog_id,
         'blog_title' => $blog['title']
     ]);
-}
-if (!$blog) {
-    echo "Blog no encontrado.";
-    exit;
-}
 
-// Generar URL firmada para la imagen del blog
-$image_url = '';
-try {
-    $cmd = $s3->getCommand('GetObject', [
-        'Bucket' => $bucketName,
-        'Key'    => 'original/' . htmlspecialchars($blog['image_url']),
-    ]);
-    $request = $s3->createPresignedRequest($cmd, '+1 hour');
-    $image_url = (string)$request->getUri();
-} catch (Exception $e) {
-    $image_url = ''; // Imagen de reemplazo si ocurre un error
+    // Generar URL firmada para la imagen del blog
+    try {
+        $cmd = $s3->getCommand('GetObject', [
+            'Bucket' => $bucketName,
+            'Key'    => 'original/' . htmlspecialchars($blog['image_url']),
+        ]);
+        $request = $s3->createPresignedRequest($cmd, '+1 hour');
+        $image_url = (string)$request->getUri();
+    } catch (Exception $e) {
+        $image_url = 'default-thumbnail.jpg'; // Imagen predeterminada
+    }
 }
 
 // Consultar entradas recientes
@@ -69,61 +67,56 @@ $recent_blogs = $conn->query("SELECT id, title FROM blogs ORDER BY created_at DE
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($blog['title']) ?> - Blog Personal</title>
+    <title><?= $blog ? htmlspecialchars($blog['title']) : 'Blog no encontrado' ?> - Blog Personal</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
+    <?php include 'navbar.php'; ?>
+
     <div class="container mx-auto py-8">
-        <!-- Barra de navegación -->
-        <nav class="bg-white shadow-md p-4 rounded mb-8">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-700">Blog Personal</h1>
-                <ul class="flex space-x-4">
-                    <li><a href="index.php" class="text-gray-700 hover:text-blue-500 font-semibold">Inicio</a></li>
-                </ul>
-                <div class="relative">
-                    <button onclick="toggleMenu()" class="bg-blue-500 text-white px-4 py-2 rounded focus:outline-none">
-                        Ver Perfil
-                    </button>
-                    <div id="profileMenu" class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded hidden">
-                        <a href="account.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Mi Cuenta</a>
-                        <a href="logout.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Cerrar Sesión</a>
+        <?php if (isset($error_message)): ?>
+            <!-- Mensaje de error -->
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-2">Error</h2>
+                <p><?= htmlspecialchars($error_message) ?></p>
+                <a href="index.php" class="text-blue-500 hover:underline mt-4 block">Volver al inicio</a>
+            </div>
+        <?php else: ?>
+            <!-- Contenido del blog -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Detalles del blog -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                    <div>
+                        <img src="<?= $image_url ?>" alt="<?= htmlspecialchars($blog['title']) ?>" class="w-full h-64 object-cover rounded-lg shadow-sm">
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-800 mt-4"><?= htmlspecialchars($blog['title']) ?></h1>
+                    <p class="text-gray-600 mt-2">Publicado el <?= date('d M Y', strtotime($blog['created_at'])) ?></p>
+                    <p class="text-gray-700 mt-6 leading-relaxed"><?= nl2br(htmlspecialchars($blog['content'])) ?></p>
+                    <p class="text-gray-800 mt-4">
+                        Autor: 
+                        <a href="author_blogs.php?author_id=<?= $blog['author_id'] ?>" class="text-blue-500 hover:underline">
+                            <?= htmlspecialchars($blog['author_name']) ?>
+                        </a>
+                    </p>
+                </div>
+
+                <!-- Entradas recientes -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Entradas recientes</h2>
+                        <ul class="mt-4 space-y-2">
+                            <?php while ($recent_blog = $recent_blogs->fetch_assoc()): ?>
+                                <li class="border-b border-gray-200 pb-2">
+                                    <a href="blog_details.php?id=<?= $recent_blog['id'] ?>" class="text-blue-500 hover:underline">
+                                        <?= htmlspecialchars($recent_blog['title']) ?>
+                                    </a>
+                                </li>
+                            <?php endwhile; ?>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </nav>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
-                <div>
-                    <img src="<?= $image_url ?>" alt="<?= htmlspecialchars($blog['title']) ?>" class="w-full h-64 object-cover rounded-lg">
-                </div>
-                <h1 class="text-3xl font-bold text-gray-800 mt-4"><?= htmlspecialchars($blog['title']) ?></h1>
-                <p class="text-gray-600 mt-2">Publicado el <?= date('d M Y', strtotime($blog['created_at'])) ?></p>
-                <p class="text-gray-700 mt-6"><?= nl2br(htmlspecialchars($blog['content'])) ?></p>
-                <p class="text-gray-800 mt-4">
-                    Autor: 
-                    <a href="author_blogs.php?author_id=<?= $blog['author_id'] ?>" class="text-blue-500 hover:underline">
-                        <?= htmlspecialchars($blog['author_name']) ?>
-                    </a>
-                </p>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">Entradas recientes</h2>
-                    <ul class="mt-4">
-                        <?php while ($recent_blog = $recent_blogs->fetch_assoc()): ?>
-                            <li>
-                                <a href="blog_details.php?id=<?= $recent_blog['id'] ?>" class="text-blue-500 hover:underline">
-                                    <?= htmlspecialchars($recent_blog['title']) ?>
-                                </a>
-                            </li>
-                        <?php endwhile; ?>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        <?php endif; ?>
     </div>
 </body>
 </html>
