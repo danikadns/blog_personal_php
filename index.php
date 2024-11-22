@@ -1,6 +1,5 @@
 <?php
 require 'session_handler.php';
-require 'dynamo_activity.php';
 require 'generateAwsCredentials.php';
 
 $handler = new MySQLSessionHandler();
