@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_blog_id'])) {
                                 <td class="border border-gray-300 px-4 py-2"><?= date('d-m-Y', strtotime($blog['created_at'])) ?></td>
                                 <td class="border border-gray-300 px-4 py-2">
                                     <a href="blog_details.php?id=<?= $blog['id'] ?>" class="text-blue-500 hover:underline">Ver</a>
-                                    <form action="profile.php" method="POST" style="display:inline;">
+                                    <form action="account.php" method="POST" style="display:inline;">
                                         <input type="hidden" name="delete_blog_id" value="<?= $blog['id'] ?>">
                                         <button type="submit" class="text-red-500 hover:underline ml-2">Eliminar</button>
                                     </form>
