@@ -64,13 +64,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Invoca la función Lambda para notificar a los suscriptores
                 try {
                     $result = $lambda->invoke([
-                        'FunctionName' => 'arn:aws:lambda:us-east-1:010526258440:function:SuscripcionesBlogs', // ARN de tu función Lambda
+                        'FunctionName' => 'arn:aws:lambda:us-east-1:010526258440:function:pruebaSES', // ARN de tu función Lambda
                         'InvocationType' => 'Event', // Ejecución asíncrona
-                        'Payload' => json_encode([
-                            'author_id' => $user_id,
-                            'blog_title' => $title,
-                            'blog_url' => $blog_url,
-                        ]),
+                        'Payload' => json_encode([]),
                     ]);
                     error_log("Llamada a Lambda exitosa: " . json_encode($result));
                 } catch (AwsException $e) {
