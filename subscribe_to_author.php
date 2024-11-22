@@ -1,6 +1,7 @@
 <?php
 require 'session_handler.php';
-require 'dynamo_activity.php';
+require 'dynamo_activity.php'; // Función logUserActivity actualizada
+require 'generateAwsCredentials.php'; // Para generar credenciales
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -20,24 +21,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $author_id = isset($_POST['author_id']) ? (int)$_POST['author_id'] : 0;
     $user_id = $_SESSION['user_id'];
 
-    // Verificar
+    // Verificar si ya existe una suscripción
     $check_subscription = $conn->query("SELECT * FROM subscriptions WHERE user_id = $user_id AND author_id = $author_id");
     if ($check_subscription->num_rows > 0) {
         $alert_message = "Ya estás suscrito a este autor.";
         $alert_type = "error";
     } else {
-        
+        // Insertar la suscripción en la base de datos
         $conn->query("INSERT INTO subscriptions (user_id, author_id) VALUES ($user_id, $author_id)");
 
         if ($conn->affected_rows > 0) {
-            logUserActivity($user_id, 'subscribe', [
-                'author_id' => $author_id
-            ]);
+            // Registrar la actividad en DynamoDB
+            try {
+                logUserActivity($user_id, 'subscribe', [
+                    'author_id' => $author_id,
+                    'author_name' => 'Autor_' . $author_id, // Ejemplo adicional para detalles
+                ]);
+            } catch (Exception $e) {
+                error_log("Error al registrar actividad en DynamoDB: " . $e->getMessage());
+            }
 
             $alert_message = "Suscripción exitosa. Ahora recibirás notificaciones de este autor.";
             $alert_type = "success";
 
-            // Redirigir después de 3 seg
+            // Redirigir después de 3 segundos
             header("Refresh:3; url=author_blogs.php?author_id=" . $author_id);
         } else {
             $alert_message = "Error al suscribirse. Inténtalo de nuevo.";
