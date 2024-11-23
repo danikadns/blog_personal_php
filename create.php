@@ -2,9 +2,9 @@
 include 'db.php';
 require 'vendor/autoload.php';
 require 'session_handler.php';
-require 'generateAwsCredentials.php'; 
+require 'generateAwsCredentials.php';
 
-use Aws\Sns\SnsClient;
+use Aws\Ses\SesClient;
 use Aws\Exception\AwsException;
 
 $handler = new MySQLSessionHandler();
@@ -21,8 +21,9 @@ try {
 } catch (Exception $e) {
     die("Error al generar credenciales de AWS: " . $e->getMessage());
 }
-// Configurar el cliente SNS con credenciales renovadas
-$sns = new SnsClient([
+
+// Configurar el cliente SES con credenciales renovadas
+$sesClient = new SesClient([
     'version' => 'latest',
     'region' => 'us-east-1',
     'credentials' => [
@@ -49,21 +50,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$role_id', '$description')";
 
     if ($conn->query($sql) === TRUE) {
-        $topicArn = 'arn:aws:sns:us-east-1:010526258440:notificaciones_blog_personal';
-
         try {
-            // Suscribir al usuario al tema SNS
-            $result = $sns->subscribe([
-                'TopicArn' => $topicArn,
-                'Protocol' => 'email',
-                'Endpoint' => $email,
+            // Verificar el correo electrónico con SES
+            $result = $sesClient->verifyEmailIdentity([
+                'EmailAddress' => $email,
             ]);
 
             // Redirige al usuario a la lista de usuarios
             header('Location: users.php');
             exit();
         } catch (AwsException $e) {
-            echo "Error al suscribir al usuario a SNS: " . $e->getMessage();
+            echo "Error al verificar el correo electrónico con SES: " . $e->getMessage();
         }
     } else {
         // Error al insertar en la base de datos
