@@ -1,7 +1,7 @@
 <?php
 require 'session_handler.php';
-require 'dynamo_activity.php'; // Función logUserActivity actualizada
-require 'generateAwsCredentials.php'; // Para generar credenciales
+require 'dynamo_activity.php'; 
+require 'generateAwsCredentials.php'; 
 
 $handler = new MySQLSessionHandler();
 session_set_save_handler($handler, true);
@@ -21,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $author_id = isset($_POST['author_id']) ? (int)$_POST['author_id'] : 0;
     $user_id = $_SESSION['user_id'];
 
+    // Obtener el nombre del autor
+    $author_query = $conn->query("SELECT name FROM users WHERE id = $author_id");
+    $author = $author_query->fetch_assoc();
+    $author_name = $author ? $author['name'] : "Desconocido";
+
     // Verificar si ya existe una suscripción
     $check_subscription = $conn->query("SELECT * FROM subscriptions WHERE user_id = $user_id AND author_id = $author_id");
     if ($check_subscription->num_rows > 0) {
@@ -35,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 logUserActivity($user_id, 'subscribe', [
                     'author_id' => $author_id,
-                    'author_name' => 'Autor_' . $author_id, // Ejemplo adicional para detalles
+                    'author_name' => $author_name,
                 ]);
             } catch (Exception $e) {
                 error_log("Error al registrar actividad en DynamoDB: " . $e->getMessage());

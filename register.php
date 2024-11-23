@@ -43,12 +43,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     VALUES ('$name', '$username', '$hashed_password', '$email', '$phone_number', '$description', 2)";
 
             if ($conn->query($sql) === TRUE) {
+                // Configurar SQS y SNS
                 $sqs = new SqsClient([
                     'version' => 'latest',
                     'region'  => 'us-east-1',
                 ]);
 
+                $sns = new SnsClient([
+                    'version' => 'latest',
+                    'region'  => 'us-east-1',
+                ]);
+
                 $queueUrl = 'https://sqs.us-east-1.amazonaws.com/010526258440/UserRegistrationQueue';
+                $topicArn = 'arn:aws:sns:us-east-1:010526258440:notificaciones_blog_personal';
 
                 try {
                     $messageBody = json_encode([
@@ -63,10 +70,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'MessageBody' => $messageBody,
                     ]);
 
+                    // Suscribir al usuario al tema SNS
+                    $sns->subscribe([
+                        'TopicArn' => $topicArn,
+                        'Protocol' => 'email',
+                        'Endpoint' => $email,
+                    ]);
+
+                    // Redirigir al login después del registro
                     header('Location: login.php?success=1');
                     exit();
                 } catch (AwsException $e) {
-                    $error = "Error al enviar el mensaje a SQS: " . $e->getAwsErrorMessage();
+                    $error = "Error al procesar el registro: " . $e->getAwsErrorMessage();
                 }
             } else {
                 $error = "Error creando usuario: " . $conn->error;
