@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $description = $_POST['description'];
 
     $stmt = $conn->prepare("UPDATE users SET name = ?, description = ? WHERE id = ?");
-    $stmt->bind_param('sssi', $name, $description, $user_id);
+    $stmt->bind_param('ssi', $name, $description, $user_id);
     if ($stmt->execute()) {
         $message = "Perfil actualizado correctamente.";
     } else {
@@ -37,7 +37,7 @@ $user = $conn->query("SELECT name, description FROM users WHERE id = $user_id")-
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
-<?php include 'navbar.php'; ?>
+    <?php include 'navbar.php'; ?>
 <div class="container mx-auto py-8">
     <h1 class="text-3xl font-bold mb-4">Editar Perfil</h1>
     <?php if (isset($message)): ?>
