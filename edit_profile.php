@@ -15,11 +15,10 @@ $user_id = $_SESSION['user_id'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
-    $email = $_POST['email'];
     $description = $_POST['description'];
 
-    $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, description = ? WHERE id = ?");
-    $stmt->bind_param('sssi', $name, $email, $description, $user_id);
+    $stmt = $conn->prepare("UPDATE users SET name = ?, description = ? WHERE id = ?");
+    $stmt->bind_param('sssi', $name, $description, $user_id);
     if ($stmt->execute()) {
         $message = "Perfil actualizado correctamente.";
     } else {
@@ -28,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
 }
 
-$user = $conn->query("SELECT name, email, description FROM users WHERE id = $user_id")->fetch_assoc();
+$user = $conn->query("SELECT name, description FROM users WHERE id = $user_id")->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
@@ -50,11 +49,6 @@ $user = $conn->query("SELECT name, email, description FROM users WHERE id = $use
         <div class="mb-4">
             <label for="name" class="block text-gray-700">Nombre:</label>
             <input type="text" id="name" name="name" value="<?= htmlspecialchars($user['name']) ?>" required
-                   class="border rounded w-full py-2 px-3">
-        </div>
-        <div class="mb-4">
-            <label for="email" class="block text-gray-700">Correo:</label>
-            <input type="email" id="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" required
                    class="border rounded w-full py-2 px-3">
         </div>
         <div class="mb-4">
